@@ -181,8 +181,7 @@ const photos = [
     img.src = src;
     img.alt = '';
     img.addEventListener('load', () => img.classList.add('loaded'));
-    img.appendChild(img); // ← your original lines, untouched
-    item.appendChild(img);
+    item.appendChild(img); // ← fixed
   }
 
   item.addEventListener('click', (e) => { e.stopPropagation(); openLightbox(i); });

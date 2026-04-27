@@ -41,23 +41,29 @@
   @media (max-width: 900px) { .gallery { columns: 2; padding: 0 1.5rem 3rem; } }
   @media (max-width: 500px) { .gallery { columns: 1; padding: 0 1rem 2rem; } }
 
-  .gallery-item {
-    break-inside: avoid;
-    margin-bottom: 12px;
-    overflow: hidden;
-    cursor: zoom-in;
-    background: #e8e6e1;
-  }
+ .gallery-item {
+  break-inside: avoid;
+  margin-bottom: 12px;
+  overflow: hidden;
+  cursor: zoom-in;
+  background: #e8e6e1;
+}
+.gallery-item img {
+  width: 100%;
+  display: block;
+  transition: transform 0.5s ease, opacity 0.3s;
+  opacity: 0;
+}
+.gallery-item img.loaded { opacity: 1; }
+.gallery-item:hover img { transform: scale(1.02); }
 
-  .gallery-item img {
-    width: 100%;
-    display: block;
-    transition: transform 0.5s ease, opacity 0.3s;
-    opacity: 0;
-  }
-  .gallery-item img.loaded { opacity: 1; }
-  .gallery-item:hover img { transform: scale(1.02); }
-
+.gallery-item video {
+  width: 100%;
+  display: block;
+  transition: transform 0.5s ease;
+}
+.gallery-item:hover video { transform: scale(1.02); }
+ 
   /* ── LIGHTBOX ── */
   #lightbox {
     position: fixed; inset: 0;
@@ -126,7 +132,7 @@
 const photos = [
   "photo1.jpg",
   "photo2.jpg",
-  "photo3.jpg",
+  "{ type: "video", src: "movie1.mp4" }",
   "photo4.jpg",
   "photo5.jpg",
   "photo6.jpg",
@@ -156,18 +162,33 @@ const photos = [
   document.getElementById('photo-count').textContent = photos.length + ' works';
 
   // Build gallery
-  photos.forEach((src, i) => {
-    const item = document.createElement('div');
-    item.className = 'gallery-item';
+ photos.forEach((src, i) => {
+  const item = document.createElement('div');
+  item.className = 'gallery-item';
+
+  if (src.type === 'video') {
+    const video = document.createElement('video');
+    video.src = src.src;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.preload = 'none';
+    item.addEventListener('mouseenter', () => video.play());
+    item.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
+    item.appendChild(video);
+  } else {
     const img = document.createElement('img');
     img.src = src;
     img.alt = '';
     img.addEventListener('load', () => img.classList.add('loaded'));
-    img.addEventListener('click', (e) => { e.stopPropagation(); openLightbox(i); });
+    img.appendChild(img); // ← your original lines, untouched
     item.appendChild(img);
-    gallery.appendChild(item);
-  });
+  }
 
+  item.addEventListener('click', (e) => { e.stopPropagation(); openLightbox(i); });
+  gallery.appendChild(item);
+});
+ 
   // Lightbox
   function openLightbox(index) {
     current = index;

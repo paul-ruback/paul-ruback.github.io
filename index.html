@@ -172,9 +172,7 @@ const photos = [
     video.muted = true;
     video.loop = true;
     video.playsInline = true;
-    video.preload = 'none';
-    item.addEventListener('mouseenter', () => video.play());
-    item.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
+    video.autoplay = true;
     item.appendChild(video);
   } else {
     const img = document.createElement('img');

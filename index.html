@@ -247,9 +247,6 @@ const photos = [
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Terminal Flip Card</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
  
   <style>
     /* ============================================================
@@ -259,12 +256,11 @@ const photos = [
     /* --- Card scene (perspective wrapper) ---------------------- */
     .card-scene {
       width: 100%;
-      max-width: 520px;       /* adjust to taste */
+      max-width: 520px;
       height: 240px;
       perspective: 1000px;
       cursor: pointer;
-      font-family: 'Space Mono', monospace;
-      /* sits flush at top — position however suits your layout */
+      font-family: system-ui, sans-serif;  /* matches your site */
     }
  
     /* --- The flipping card ------------------------------------- */
@@ -287,17 +283,10 @@ const photos = [
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
       border-radius: 14px;
-      background: transparent;         /* inherits your page bg */
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: transparent;
+      border: 1px solid rgba(17, 17, 17, 0.08);  /* subtle on #f5f4f0 */
       overflow: hidden;
       box-sizing: border-box;
-    }
- 
-    /* swap border for light-mode sites */
-    @media (prefers-color-scheme: light) {
-      .flip-card__face {
-        border-color: rgba(0, 0, 0, 0.1);
-      }
     }
  
     .flip-card__face--back {
@@ -320,18 +309,14 @@ const photos = [
  
     .flip-card__win-title {
       font-size: 10px;
-      color: rgba(255, 255, 255, 0.25);
+      color: #999;
       margin-left: 8px;
-      letter-spacing: 0.08em;
-    }
- 
-    @media (prefers-color-scheme: light) {
-      .flip-card__win-title { color: rgba(0, 0, 0, 0.3); }
+      letter-spacing: 0.04em;  /* matches your site */
     }
  
     /* --- Front face -------------------------------------------- */
     .flip-card__front-inner {
-      padding: 28px 32px;
+      padding: 2rem 3rem;       /* matches your header padding */
       height: 100%;
       display: flex;
       flex-direction: column;
@@ -342,94 +327,72 @@ const photos = [
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.8rem;        /* matches your header span */
+      color: #999;
+      letter-spacing: 0.04em;
       line-height: 1.8;
     }
  
-    @media (prefers-color-scheme: light) {
-      .flip-card__prompt { color: rgba(0, 0, 0, 0.4); }
-    }
- 
     .flip-card__prompt-symbol {
-      color: #f778ba;
+      color: #f778ba;            /* pink accent */
     }
  
     .flip-card__name {
-      font-size: 30px;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.02em;
-      line-height: 1.15;
+      font-size: 1.8rem;
+      font-weight: 400;          /* matches your site's light weight */
+      color: #111;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
       margin: 8px 0 6px;
       opacity: 0;
       animation: card-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s forwards;
     }
  
-    @media (prefers-color-scheme: light) {
-      .flip-card__name { color: #0d1117; }
-    }
- 
     .flip-card__role {
-      font-size: 10px;
-      color: #a5d6ff;
-      letter-spacing: 0.12em;
+      font-size: 0.8rem;
+      color: #999;
+      letter-spacing: 0.04em;   /* matches your header span */
       margin-bottom: 10px;
       opacity: 0;
       animation: card-fade-in 0.4s ease 1.3s forwards;
     }
  
     .flip-card__hint {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.25);
-      letter-spacing: 0.06em;
+      font-size: 0.8rem;
+      color: #999;
+      letter-spacing: 0.04em;
       opacity: 0;
       animation: card-fade-in 0.4s ease 1.7s forwards;
     }
  
-    @media (prefers-color-scheme: light) {
-      .flip-card__hint { color: rgba(0, 0, 0, 0.3); }
-    }
- 
     .flip-card__front-footer {
       margin-top: auto;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid rgba(17, 17, 17, 0.06);
       padding-top: 12px;
       display: flex;
       justify-content: flex-end;
     }
  
-    @media (prefers-color-scheme: light) {
-      .flip-card__front-footer { border-top-color: rgba(0, 0, 0, 0.08); }
-    }
- 
     .flip-card__filename {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.2);
-    }
- 
-    @media (prefers-color-scheme: light) {
-      .flip-card__filename { color: rgba(0, 0, 0, 0.25); }
+      font-size: 0.7rem;
+      color: #999;
+      letter-spacing: 0.04em;
     }
  
     /* blinking cursor */
     .flip-card__cursor {
       display: inline-block;
-      width: 7px;
-      height: 18px;
-      background: #ffffff;
+      width: 2px;
+      height: 1.4rem;
+      background: #111;
       vertical-align: middle;
-      margin-left: 2px;
+      margin-left: 3px;
       animation: card-blink 1s step-end infinite;
-    }
- 
-    @media (prefers-color-scheme: light) {
-      .flip-card__cursor { background: #0d1117; }
     }
  
     /* --- Back face --------------------------------------------- */
     .flip-card__back-inner {
-      padding: 24px 32px;
+      padding: 2rem 3rem;       /* matches your header padding */
       height: 100%;
       display: flex;
       flex-direction: column;
@@ -442,30 +405,20 @@ const photos = [
       align-items: center;
       margin-bottom: 18px;
       padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
- 
-    @media (prefers-color-scheme: light) {
-      .flip-card__back-header { border-bottom-color: rgba(0, 0, 0, 0.08); }
+      border-bottom: 1px solid rgba(17, 17, 17, 0.06);
     }
  
     .flip-card__back-name {
-      font-size: 13px;
-      font-weight: 700;
-      color: #ffffff;
-    }
- 
-    @media (prefers-color-scheme: light) {
-      .flip-card__back-name { color: #0d1117; }
+      font-size: 1rem;
+      font-weight: 400;
+      color: #111;
+      letter-spacing: 0.04em;
     }
  
     .flip-card__back-cmd {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.25);
-    }
- 
-    @media (prefers-color-scheme: light) {
-      .flip-card__back-cmd { color: rgba(0, 0, 0, 0.3); }
+      font-size: 0.7rem;
+      color: #999;
+      letter-spacing: 0.04em;
     }
  
     /* contact rows */
@@ -480,34 +433,27 @@ const photos = [
     .flip-card__contact-row {
       display: flex;
       align-items: center;
-      font-size: 12px;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
     }
  
     .flip-card__contact-key {
-      color: #a5d6ff;
+      color: #999;
       min-width: 84px;
       flex-shrink: 0;
     }
  
     .flip-card__contact-eq {
-      color: rgba(255, 255, 255, 0.2);
+      color: rgba(17, 17, 17, 0.2);
       margin-right: 8px;
     }
  
-    @media (prefers-color-scheme: light) {
-      .flip-card__contact-eq { color: rgba(0, 0, 0, 0.25); }
-    }
- 
     .flip-card__contact-val {
-      color: #ffffff;
-    }
- 
-    @media (prefers-color-scheme: light) {
-      .flip-card__contact-val { color: #0d1117; }
+      color: #111;
     }
  
     .flip-card__contact-val a {
-      color: #f778ba;
+      color: #f778ba;            /* pink accent */
       text-decoration: none;
     }
  
@@ -516,29 +462,22 @@ const photos = [
     }
  
     .flip-card__back-footer {
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid rgba(17, 17, 17, 0.06);
       padding-top: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
  
-    @media (prefers-color-scheme: light) {
-      .flip-card__back-footer { border-top-color: rgba(0, 0, 0, 0.08); }
-    }
- 
     .flip-card__back-footer-right {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.2);
-    }
- 
-    @media (prefers-color-scheme: light) {
-      .flip-card__back-footer-right { color: rgba(0, 0, 0, 0.25); }
+      font-size: 0.7rem;
+      color: #999;
+      letter-spacing: 0.04em;
     }
  
     /* --- Keyframe animations ----------------------------------- */
     @keyframes card-pop-in {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0);   }
     }
  
@@ -553,6 +492,22 @@ const photos = [
   </style>
 </head>
 <body>
+ 
+  <!--
+  ================================================================
+    TERMINAL FLIP CARD — portfolio hero component
+    Matched to: system-ui font · #f5f4f0 bg · #111/#999 palette
+  ================================================================
+  HOW TO USE
+  ──────────
+  1. Copy the <style> block above into your site's CSS file.
+  2. Paste this HTML wherever you want the card (e.g. inside <header>
+     or at the top of your <main>).
+  3. Replace every  ← EDIT THIS  comment with your own info.
+  4. Copy the <script> block into your JS file (or keep it inline).
+  No external fonts or dependencies needed.
+  ================================================================
+  -->
  
   <div class="card-scene" id="cardScene" role="button" aria-label="Contact card — click to flip" tabindex="0">
     <div class="flip-card" id="flipCard">
@@ -580,12 +535,12 @@ const photos = [
  
             <!-- your name -->
             <div class="flip-card__name">
-              Paul Ruback<span class="flip-card__cursor"></span>  <!-- ← EDIT THIS -->
+              Paul<span class="flip-card__cursor"></span>  <!-- ← EDIT THIS -->
             </div>
  
             <!-- your role / tagline -->
             <div class="flip-card__role">
-              CREATIVE DIRECTION & DESIGN <!-- ← EDIT THIS (keep uppercase) -->
+              Creative Direction & Design  <!-- ← EDIT THIS -->
             </div>
  
             <!-- flip prompt -->
@@ -594,7 +549,7 @@ const photos = [
  
           <div class="flip-card__front-footer">
             <span class="flip-card__filename">
-              portfolio.sh  <!-- ← EDIT THIS or remove -->
+              portfolio.io  <!-- ← EDIT THIS or remove entirely -->
             </span>
           </div>
  
@@ -609,34 +564,34 @@ const photos = [
  
           <div class="flip-card__back-header">
             <span class="flip-card__back-name">
-              Paul Ruback  <!-- ← EDIT THIS -->
+              Paul <!-- ← EDIT THIS -->
             </span>
             <span class="flip-card__back-cmd">contact --all</span>
           </div>
  
           <div class="flip-card__contacts">
  
-            <!-- EMAIL — replace href and display text -->
+            <!-- EMAIL -->
             <div class="flip-card__contact-row">
               <span class="flip-card__contact-key">email</span>
               <span class="flip-card__contact-eq">=</span>
               <span class="flip-card__contact-val">
-                <a href="mailto:you@example.com">paulcruback@gmail.com</a>  <!-- ← EDIT THIS -->
+                <a href="mailto:paulcruback@gmail.com">paulcruback@gmail.com</a>  <!-- ← EDIT THIS -->
               </span>
             </div>
  
-            <!-- GITHUB — replace href and display text -->
+            <!-- GITHUB -->
             <div class="flip-card__contact-row">
               <span class="flip-card__contact-key">github</span>
               <span class="flip-card__contact-eq">=</span>
               <span class="flip-card__contact-val">
-                <a href="https://github.com/yourusername" target="_blank" rel="noopener">
-                  paul-ruback.github.io/portfolio/ <!-- ← EDIT THIS -->
+                <a href="https://paul-ruback.github.io/portfolio/" target="_blank" rel="noopener">
+                  github.com/paul-ruback  <!-- ← EDIT THIS -->
                 </a>
               </span>
             </div>
  
-            <!-- LINKEDIN — replace href and display text -->
+            <!-- LINKEDIN -->
             <div class="flip-card__contact-row">
               <span class="flip-card__contact-key">linkedin</span>
               <span class="flip-card__contact-eq">=</span>
@@ -647,12 +602,12 @@ const photos = [
               </span>
             </div>
  
-            <!-- LOCATION — plain text, no link needed -->
+            <!-- LOCATION -->
             <div class="flip-card__contact-row">
               <span class="flip-card__contact-key">location</span>
               <span class="flip-card__contact-eq">=</span>
               <span class="flip-card__contact-val">
-                Your City, Country  <!-- ← EDIT THIS -->
+                Paris and New York  <!-- ← EDIT THIS -->
               </span>
             </div>
  
@@ -684,8 +639,7 @@ const photos = [
  
   <script>
     /* ============================================================
-       PASTE THIS <script> BLOCK INTO YOUR SITE'S JS FILE
-       (or keep it inline here — both work fine)
+       PASTE THIS INTO YOUR SITE'S JS FILE (or keep inline)
        ============================================================ */
     (function () {
       const scene = document.getElementById('cardScene');
@@ -698,10 +652,8 @@ const photos = [
         scene.setAttribute('aria-pressed', card.classList.contains('is-flipped'));
       }
  
-      /* click */
       scene.addEventListener('click', toggle);
  
-      /* keyboard — Space or Enter */
       scene.addEventListener('keydown', function (e) {
         if (e.key === ' ' || e.key === 'Enter') {
           e.preventDefault();

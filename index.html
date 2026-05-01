@@ -149,7 +149,7 @@ const photos = [
   "photo12.jpg",
   "photo13.jpg",
  "photo15.jpg",
- { type: "video", src: "movie7.mov" },
+ { type: "video", src: "movie6.mov" },
  "photo16.jpg",
  "photo17.jpg",
  { type: "video", src: "movie8.mp4" },
@@ -239,5 +239,477 @@ const photos = [
     if (delta < -50 && current < photos.length-1){ current++; updateLightbox(); }
   });
 </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terminal Flip Card</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+ 
+  <style>
+    /* ============================================================
+       PASTE THIS ENTIRE <style> BLOCK INTO YOUR SITE'S CSS
+       ============================================================ */
+ 
+    /* --- Card scene (perspective wrapper) ---------------------- */
+    .card-scene {
+      width: 100%;
+      max-width: 520px;       /* adjust to taste */
+      height: 240px;
+      perspective: 1000px;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      /* sits flush at top — position however suits your layout */
+    }
+ 
+    /* --- The flipping card ------------------------------------- */
+    .flip-card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+ 
+    .flip-card.is-flipped {
+      transform: rotateY(180deg);
+    }
+ 
+    /* --- Shared face styles ------------------------------------ */
+    .flip-card__face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 14px;
+      background: transparent;         /* inherits your page bg */
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+ 
+    /* swap border for light-mode sites */
+    @media (prefers-color-scheme: light) {
+      .flip-card__face {
+        border-color: rgba(0, 0, 0, 0.1);
+      }
+    }
+ 
+    .flip-card__face--back {
+      transform: rotateY(180deg);
+    }
+ 
+    /* --- Window chrome (traffic lights + title bar) ------------ */
+    .flip-card__win-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 22px;
+    }
+ 
+    .flip-card__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+ 
+    .flip-card__win-title {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.25);
+      margin-left: 8px;
+      letter-spacing: 0.08em;
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__win-title { color: rgba(0, 0, 0, 0.3); }
+    }
+ 
+    /* --- Front face -------------------------------------------- */
+    .flip-card__front-inner {
+      padding: 28px 32px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+ 
+    .flip-card__prompt {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+      line-height: 1.8;
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__prompt { color: rgba(0, 0, 0, 0.4); }
+    }
+ 
+    .flip-card__prompt-symbol {
+      color: #f778ba;
+    }
+ 
+    .flip-card__name {
+      font-size: 30px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin: 8px 0 6px;
+      opacity: 0;
+      animation: card-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s forwards;
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__name { color: #0d1117; }
+    }
+ 
+    .flip-card__role {
+      font-size: 10px;
+      color: #a5d6ff;
+      letter-spacing: 0.12em;
+      margin-bottom: 10px;
+      opacity: 0;
+      animation: card-fade-in 0.4s ease 1.3s forwards;
+    }
+ 
+    .flip-card__hint {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.25);
+      letter-spacing: 0.06em;
+      opacity: 0;
+      animation: card-fade-in 0.4s ease 1.7s forwards;
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__hint { color: rgba(0, 0, 0, 0.3); }
+    }
+ 
+    .flip-card__front-footer {
+      margin-top: auto;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__front-footer { border-top-color: rgba(0, 0, 0, 0.08); }
+    }
+ 
+    .flip-card__filename {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.2);
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__filename { color: rgba(0, 0, 0, 0.25); }
+    }
+ 
+    /* blinking cursor */
+    .flip-card__cursor {
+      display: inline-block;
+      width: 7px;
+      height: 18px;
+      background: #ffffff;
+      vertical-align: middle;
+      margin-left: 2px;
+      animation: card-blink 1s step-end infinite;
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__cursor { background: #0d1117; }
+    }
+ 
+    /* --- Back face --------------------------------------------- */
+    .flip-card__back-inner {
+      padding: 24px 32px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+ 
+    .flip-card__back-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__back-header { border-bottom-color: rgba(0, 0, 0, 0.08); }
+    }
+ 
+    .flip-card__back-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__back-name { color: #0d1117; }
+    }
+ 
+    .flip-card__back-cmd {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.25);
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__back-cmd { color: rgba(0, 0, 0, 0.3); }
+    }
+ 
+    /* contact rows */
+    .flip-card__contacts {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      flex: 1;
+      justify-content: center;
+    }
+ 
+    .flip-card__contact-row {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+    }
+ 
+    .flip-card__contact-key {
+      color: #a5d6ff;
+      min-width: 84px;
+      flex-shrink: 0;
+    }
+ 
+    .flip-card__contact-eq {
+      color: rgba(255, 255, 255, 0.2);
+      margin-right: 8px;
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__contact-eq { color: rgba(0, 0, 0, 0.25); }
+    }
+ 
+    .flip-card__contact-val {
+      color: #ffffff;
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__contact-val { color: #0d1117; }
+    }
+ 
+    .flip-card__contact-val a {
+      color: #f778ba;
+      text-decoration: none;
+    }
+ 
+    .flip-card__contact-val a:hover {
+      text-decoration: underline;
+    }
+ 
+    .flip-card__back-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__back-footer { border-top-color: rgba(0, 0, 0, 0.08); }
+    }
+ 
+    .flip-card__back-footer-right {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.2);
+    }
+ 
+    @media (prefers-color-scheme: light) {
+      .flip-card__back-footer-right { color: rgba(0, 0, 0, 0.25); }
+    }
+ 
+    /* --- Keyframe animations ----------------------------------- */
+    @keyframes card-pop-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+ 
+    @keyframes card-fade-in {
+      to { opacity: 1; }
+    }
+ 
+    @keyframes card-blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+ 
+  <div class="card-scene" id="cardScene" role="button" aria-label="Contact card — click to flip" tabindex="0">
+    <div class="flip-card" id="flipCard">
+ 
+      <!-- ── FRONT FACE ──────────────────────────────────────── -->
+      <div class="flip-card__face flip-card__face--front">
+        <div class="flip-card__front-inner">
+ 
+          <div>
+            <!-- window chrome -->
+            <div class="flip-card__win-bar">
+              <div class="flip-card__dot" style="background:#ff5f57"></div>
+              <div class="flip-card__dot" style="background:#febc2e"></div>
+              <div class="flip-card__dot" style="background:#28c840"></div>
+              <span class="flip-card__win-title">
+                portfolio.sh — bash  <!-- ← EDIT THIS (or remove) -->
+              </span>
+            </div>
+ 
+            <!-- shell prompt -->
+            <div class="flip-card__prompt">
+              <span class="flip-card__prompt-symbol">~</span>
+              <span>./introduce.sh</span>  <!-- ← EDIT THIS -->
+            </div>
+ 
+            <!-- your name -->
+            <div class="flip-card__name">
+              Paul Ruback<span class="flip-card__cursor"></span>  <!-- ← EDIT THIS -->
+            </div>
+ 
+            <!-- your role / tagline -->
+            <div class="flip-card__role">
+              CREATIVE DIRECTION & DESIGN <!-- ← EDIT THIS (keep uppercase) -->
+            </div>
+ 
+            <!-- flip prompt -->
+            <div class="flip-card__hint">flip for contact ⟶</div>
+          </div>
+ 
+          <div class="flip-card__front-footer">
+            <span class="flip-card__filename">
+              portfolio.sh  <!-- ← EDIT THIS or remove -->
+            </span>
+          </div>
+ 
+        </div>
+      </div>
+      <!-- ── END FRONT ─────────────────────────────────────── -->
+ 
+ 
+      <!-- ── BACK FACE ───────────────────────────────────────── -->
+      <div class="flip-card__face flip-card__face--back">
+        <div class="flip-card__back-inner">
+ 
+          <div class="flip-card__back-header">
+            <span class="flip-card__back-name">
+              Paul Ruback  <!-- ← EDIT THIS -->
+            </span>
+            <span class="flip-card__back-cmd">contact --all</span>
+          </div>
+ 
+          <div class="flip-card__contacts">
+ 
+            <!-- EMAIL — replace href and display text -->
+            <div class="flip-card__contact-row">
+              <span class="flip-card__contact-key">email</span>
+              <span class="flip-card__contact-eq">=</span>
+              <span class="flip-card__contact-val">
+                <a href="mailto:you@example.com">paulcruback@gmail.com</a>  <!-- ← EDIT THIS -->
+              </span>
+            </div>
+ 
+            <!-- GITHUB — replace href and display text -->
+            <div class="flip-card__contact-row">
+              <span class="flip-card__contact-key">github</span>
+              <span class="flip-card__contact-eq">=</span>
+              <span class="flip-card__contact-val">
+                <a href="https://github.com/yourusername" target="_blank" rel="noopener">
+                  paul-ruback.github.io/portfolio/ <!-- ← EDIT THIS -->
+                </a>
+              </span>
+            </div>
+ 
+            <!-- LINKEDIN — replace href and display text -->
+            <div class="flip-card__contact-row">
+              <span class="flip-card__contact-key">linkedin</span>
+              <span class="flip-card__contact-eq">=</span>
+              <span class="flip-card__contact-val">
+                <a href="https://linkedin.com/in/yourusername" target="_blank" rel="noopener">
+                  linkedin.com/in/paulruback  <!-- ← EDIT THIS -->
+                </a>
+              </span>
+            </div>
+ 
+            <!-- LOCATION — plain text, no link needed -->
+            <div class="flip-card__contact-row">
+              <span class="flip-card__contact-key">location</span>
+              <span class="flip-card__contact-eq">=</span>
+              <span class="flip-card__contact-val">
+                Your City, Country  <!-- ← EDIT THIS -->
+              </span>
+            </div>
+ 
+            <!--
+              ADD MORE ROWS by copying the block above.
+              Common extras:
+                <span class="flip-card__contact-key">twitter</span>
+                <span class="flip-card__contact-key">website</span>
+                <span class="flip-card__contact-key">dribbble</span>
+            -->
+ 
+          </div>
+ 
+          <div class="flip-card__back-footer">
+            <span>
+              <span class="flip-card__prompt-symbol">~</span>
+              <span class="flip-card__cursor" style="animation-delay:0.5s"></span>
+            </span>
+            <span class="flip-card__back-footer-right">⟵ flip back</span>
+          </div>
+ 
+        </div>
+      </div>
+      <!-- ── END BACK ──────────────────────────────────────── -->
+ 
+    </div>
+  </div>
+ 
+ 
+  <script>
+    /* ============================================================
+       PASTE THIS <script> BLOCK INTO YOUR SITE'S JS FILE
+       (or keep it inline here — both work fine)
+       ============================================================ */
+    (function () {
+      const scene = document.getElementById('cardScene');
+      const card  = document.getElementById('flipCard');
+ 
+      if (!scene || !card) return;
+ 
+      function toggle() {
+        card.classList.toggle('is-flipped');
+        scene.setAttribute('aria-pressed', card.classList.contains('is-flipped'));
+      }
+ 
+      /* click */
+      scene.addEventListener('click', toggle);
+ 
+      /* keyboard — Space or Enter */
+      scene.addEventListener('keydown', function (e) {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          toggle();
+        }
+      });
+    })();
+  </script>
+ 
 </body>
 </html>

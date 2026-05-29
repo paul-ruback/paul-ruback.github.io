@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
    <head>
@@ -247,6 +250,62 @@ const photos = [
     if (delta > 50 && current > 0)               { current--; updateLightbox(); }
     if (delta < -50 && current < photos.length-1){ current++; updateLightbox(); }
   });
+   // ── CUBE NAV ──
+const cubeNav    = document.getElementById('cubeNav');
+const cube       = document.getElementById('cube');
+const cubeHint   = document.getElementById('cubeHint');
+const cubeSections = ['gallery', 'artifacts', 'agency'];
+const cubeRots     = { gallery: 0, artifacts: 90, agency: 180 };
+
+let cubeScrollTimer = null;
+let cubeAnimating   = false;
+
+function cubeSetActive(name) {
+  cubeHint.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+  cubeSections.forEach(s => {
+    document.getElementById('dot-' + s).classList.toggle('active', s === name);
+  });
+}
+
+function cubeRotateTo(deg) {
+  cube.classList.add('snap');
+  cube.style.setProperty('--base-rot', deg + 'deg');
+  cube.style.transform = `rotateX(${deg}deg)`;
+  setTimeout(() => cube.classList.remove('snap'), 750);
+}
+
+function cubeTo(name) {
+  const el = document.getElementById('sec-' + name);
+  if (!el) return;
+  cubeAnimating = true;
+  cubeRotateTo(cubeRots[name]);
+  cubeSetActive(name);
+  window.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
+  setTimeout(() => { cubeAnimating = false; }, 800);
+}
+
+window.addEventListener('scroll', () => {
+  cubeNav.classList.add('hidden');
+  clearTimeout(cubeScrollTimer);
+
+  if (!cubeAnimating) {
+    // find which section is most in view
+    let current = 'gallery';
+    cubeSections.forEach(s => {
+      const el = document.getElementById('sec-' + s);
+      if (el && window.scrollY >= el.offsetTop - window.innerHeight / 2) {
+        current = s;
+      }
+    });
+    cube.style.setProperty('--base-rot', cubeRots[current] + 'deg');
+    cube.style.transform = `rotateX(${cubeRots[current]}deg)`;
+    cubeSetActive(current);
+  }
+
+  cubeScrollTimer = setTimeout(() => {
+    cubeNav.classList.remove('hidden');
+  }, 900);
+});
 </script>
 </body>
 </html>
@@ -256,18 +315,7 @@ const photos = [
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Terminal Contact Card</title>
-
-  <!--
-    Requires Space Mono from Google Fonts.
-    Add this to your site's <head> if not already present:
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-
+   
   <style>
     .term-wrap {
       padding: 0 3rem 4rem;
@@ -434,6 +482,98 @@ const photos = [
       0%, 100% { opacity: 1; }
       50%       { opacity: 0; }
     }
+     /* ── CUBE NAV ── */
+@import url('https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&display=swap');
+
+.cube-nav {
+  position: fixed;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: all;
+}
+.cube-nav.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.cube-scene {
+  width: 48px;
+  height: 48px;
+  perspective: 300px;
+}
+.cube {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(0deg);
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: cubeIdle 6s ease-in-out infinite;
+}
+.cube.snap { animation: none; }
+.cube-face {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.5px solid rgba(17,17,17,0.15);
+  background: rgba(245,244,240,0.9);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cube-face:hover { background: rgba(245,244,240,1); }
+.face-front  { transform: translateZ(24px); }
+.face-bottom { transform: rotateX(-90deg) translateZ(24px); }
+.face-back   { transform: rotateX(180deg) translateZ(24px); }
+.face-top    { transform: rotateX(90deg)  translateZ(24px); }
+.face-label {
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.5);
+  user-select: none;
+}
+.cube-nav:hover .cube { animation-play-state: paused; }
+.cube-nav:hover .face-label { color: rgba(0,0,0,0.85); }
+.cube-dots {
+  display: flex;
+  gap: 6px;
+}
+.cube-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.18);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.cube-dot.active { background: rgba(0,0,0,0.55); }
+.cube-hint {
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 8px;
+  font-weight: 300;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.25);
+}
+@keyframes cubeIdle {
+  0%   { transform: rotateX(var(--base-rot,0deg)) rotateY(0deg); }
+  25%  { transform: rotateX(calc(var(--base-rot,0deg) + 2deg)) rotateY(1.5deg); }
+  50%  { transform: rotateX(var(--base-rot,0deg)) rotateY(0deg); }
+  75%  { transform: rotateX(calc(var(--base-rot,0deg) - 1.5deg)) rotateY(-1deg); }
+  100% { transform: rotateX(var(--base-rot,0deg)) rotateY(0deg); }
+}
   </style>
 </head>
 <body>
@@ -517,6 +657,30 @@ const photos = [
       </div>
     </div>
   </div>
-
+<!-- CUBE NAV -->
+<nav class="cube-nav" id="cubeNav" aria-label="Section navigation">
+  <div class="cube-scene">
+    <div class="cube" id="cube">
+      <div class="cube-face face-front"  onclick="cubeTo('gallery')">
+        <span class="face-label">Gallery</span>
+      </div>
+      <div class="cube-face face-bottom" onclick="cubeTo('artifacts')">
+        <span class="face-label">Artifacts</span>
+      </div>
+      <div class="cube-face face-back"   onclick="cubeTo('agency')">
+        <span class="face-label">Agency</span>
+      </div>
+      <div class="cube-face face-top"    onclick="cubeTo('gallery')">
+        <span class="face-label">Gallery</span>
+      </div>
+    </div>
+  </div>
+  <div class="cube-dots">
+    <div class="cube-dot active" id="dot-gallery"   onclick="cubeTo('gallery')"></div>
+    <div class="cube-dot"        id="dot-artifacts" onclick="cubeTo('artifacts')"></div>
+    <div class="cube-dot"        id="dot-agency"    onclick="cubeTo('agency')"></div>
+  </div>
+  <span class="cube-hint" id="cubeHint">Gallery</span>
+</nav>
 </body>
 </html>

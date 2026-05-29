@@ -244,78 +244,105 @@
     }
 
     /* ── CUBE NAV ── */
-    .cube-nav {
-      position: fixed;
-      bottom: 36px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 50;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      opacity: 1;
-      transition: opacity 0.6s ease;
-      pointer-events: all;
-    }
-    .cube-nav.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-    .cube-scene { width: 48px; height: 48px; perspective: 300px; }
-    .cube {
-      width: 100%; height: 100%;
-      position: relative;
-      transform-style: preserve-3d;
-      transform: rotateX(0deg);
-      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-      animation: cubeIdle 6s ease-in-out infinite;
-    }
-    .cube.snap { animation: none; }
-    .cube-face {
-      position: absolute;
-      width: 48px; height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 0.5px solid rgba(17,17,17,0.15);
-      background: rgba(245,244,240,0.92);
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .cube-face:hover { background: rgba(245,244,240,1); }
-    .face-front  { transform: translateZ(24px); }
-    .face-bottom { transform: rotateX(-90deg) translateZ(24px); }
-    .face-back   { transform: rotateX(180deg) translateZ(24px); }
-    .face-top    { transform: rotateX(90deg) translateZ(24px); }
-    .face-label {
-      font-family: 'Spectral', Georgia, serif;
-      font-size: 9px;
-      font-weight: 300;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: rgba(0,0,0,0.5);
-      user-select: none;
-    }
-    .cube-nav:hover .cube { animation-play-state: paused; }
-    .cube-nav:hover .face-label { color: rgba(0,0,0,0.85); }
-    .cube-dots { display: flex; gap: 6px; }
-    .cube-dot {
-      width: 4px; height: 4px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.18);
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .cube-dot.active { background: rgba(0,0,0,0.55); }
-    .cube-hint {
-      font-family: 'Spectral', Georgia, serif;
-      font-size: 8px;
-      font-weight: 300;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: rgba(0,0,0,0.25);
-    }
+.cnav {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease;
+}
+.cnav.out { opacity: 0; pointer-events: none; }
+.cnav-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.nav-labels {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  white-space: nowrap;
+  transition: max-width 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
+}
+.cnav-inner:hover .nav-labels { max-width: 260px; opacity: 1; }
+.nav-lbl {
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.3);
+  cursor: pointer;
+  padding: 6px 2px;
+  user-select: none;
+  transition: color 0.2s, transform 0.2s;
+}
+.nav-lbl:hover { color: rgba(0,0,0,0.85); transform: translateY(-1px); }
+.nav-lbl.active { color: rgba(0,0,0,0.7); }
+.nav-divider {
+  width: 0.5px;
+  height: 10px;
+  background: rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+.cube-scene {
+  width: 40px;
+  height: 40px;
+  perspective: 260px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.cube {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: cubeIdle 5s ease-in-out infinite;
+}
+.cube-face {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: rgba(245,244,240,0.94);
+  border: 0.5px solid rgba(0,0,0,0.13);
+}
+.face-front  { transform: translateZ(20px); }
+.face-bottom { transform: rotateX(-90deg) translateZ(20px); }
+.face-back   { transform: rotateX(180deg) translateZ(20px); }
+.face-top    { transform: rotateX(90deg)  translateZ(20px); }
+.face-left   { transform: rotateY(-90deg) translateZ(20px); }
+.face-right  { transform: rotateY(90deg)  translateZ(20px); }
+.cnav-inner:hover .cube { animation-play-state: paused; }
+.cube-dots {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.cube-dot {
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.16);
+  transition: background 0.25s;
+}
+.cube-dot.active { background: rgba(0,0,0,0.5); }
+@keyframes cubeIdle {
+  0%   { transform: rotateX(var(--rx,0deg)) rotateY(0deg); }
+  30%  { transform: rotateX(calc(var(--rx,0deg) + 2deg)) rotateY(2deg); }
+  65%  { transform: rotateX(calc(var(--rx,0deg) - 1.5deg)) rotateY(-1.5deg); }
+  100% { transform: rotateX(var(--rx,0deg)) rotateY(0deg); }
+}
     @keyframes cubeIdle {
       0%   { transform: rotateX(var(--base-rot,0deg)) rotateY(0deg); }
       25%  { transform: rotateX(calc(var(--base-rot,0deg) + 2deg)) rotateY(1.5deg); }
@@ -328,7 +355,7 @@
 <body>
 
   <header>
-    <h1>Paulo — Strategy for Creative Architecture</h1>
+    <h1>Paul Christopher — Strategy in Creative Architecture</h1>
     <span id="photo-count"></span>
   </header>
 
@@ -363,7 +390,7 @@
           </div>
 
           <div class="term-name">Paul Christopher</div>
-          <div class="term-role">CREATIVE ARCHITECTURE & STRATEGY</div>
+          <div class="term-role">CREATIVE ARCH & STRATEGY</div>
 
           <hr class="term-divider" />
 
@@ -412,30 +439,32 @@
   </div>
 
   <!-- CUBE NAV -->
-  <nav class="cube-nav" id="cubeNav" aria-label="Section navigation">
+<nav class="cnav" id="cnav" aria-label="Section navigation">
+  <div class="cnav-inner">
+    <div class="nav-labels">
+      <span class="nav-lbl active" id="lbl-gallery"   onclick="cubeTo('gallery')">Gallery</span>
+      <div class="nav-divider"></div>
+      <span class="nav-lbl"        id="lbl-artifacts" onclick="cubeTo('artifacts')">Artifacts</span>
+      <div class="nav-divider"></div>
+      <span class="nav-lbl"        id="lbl-agency"    onclick="cubeTo('agency')">Agency</span>
+    </div>
     <div class="cube-scene">
-      <div class="cube" id="cube">
-        <div class="cube-face face-front"  onclick="cubeTo('gallery')">
-          <span class="face-label">Gallery</span>
-        </div>
-        <div class="cube-face face-bottom" onclick="cubeTo('artifacts')">
-          <span class="face-label">Artifacts</span>
-        </div>
-        <div class="cube-face face-back"   onclick="cubeTo('agency')">
-          <span class="face-label">Agency</span>
-        </div>
-        <div class="cube-face face-top"    onclick="cubeTo('gallery')">
-          <span class="face-label">Gallery</span>
-        </div>
+      <div class="cube" id="cube" style="--rx:0deg">
+        <div class="cube-face face-front"></div>
+        <div class="cube-face face-bottom"></div>
+        <div class="cube-face face-back"></div>
+        <div class="cube-face face-top"></div>
+        <div class="cube-face face-left"></div>
+        <div class="cube-face face-right"></div>
       </div>
     </div>
-    <div class="cube-dots">
-      <div class="cube-dot active" id="dot-gallery"   onclick="cubeTo('gallery')"></div>
-      <div class="cube-dot"        id="dot-artifacts" onclick="cubeTo('artifacts')"></div>
-      <div class="cube-dot"        id="dot-agency"    onclick="cubeTo('agency')"></div>
-    </div>
-    <span class="cube-hint" id="cubeHint">Gallery</span>
-  </nav>
+  </div>
+  <div class="cube-dots">
+    <div class="cube-dot active" id="dot-gallery"></div>
+    <div class="cube-dot"        id="dot-artifacts"></div>
+    <div class="cube-dot"        id="dot-agency"></div>
+  </div>
+</nav>
 
   <script>
 const photos = [
@@ -539,56 +568,55 @@ const photos = [
       if (delta < -50 && current < photos.length - 1){ current++; updateLightbox(); }
     });
 
-    // ── CUBE NAV ──
-    const cubeNav      = document.getElementById('cubeNav');
-    const cube         = document.getElementById('cube');
-    const cubeHint     = document.getElementById('cubeHint');
-    const cubeSections = ['gallery', 'artifacts', 'agency'];
-    const cubeRots     = { gallery: 0, artifacts: 90, agency: 180 };
-    let cubeScrollTimer = null;
-    let cubeAnimating   = false;
+   // ── CUBE NAV ──
+const cubeNav      = document.getElementById('cnav');
+const cube         = document.getElementById('cube');
+const cubeSections = ['gallery', 'artifacts', 'agency'];
+const cubeRots     = { gallery: 0, artifacts: 90, agency: 180 };
+let cubeTimer      = null;
+let cubeAnimating  = false;
+let cubeCur        = 'gallery';
 
-    function cubeSetActive(name) {
-      cubeHint.textContent = name.charAt(0).toUpperCase() + name.slice(1);
-      cubeSections.forEach(s => {
-        document.getElementById('dot-' + s).classList.toggle('active', s === name);
-      });
-    }
-    function cubeRotateTo(deg) {
-      cube.classList.add('snap');
-      cube.style.setProperty('--base-rot', deg + 'deg');
-      cube.style.transform = `rotateX(${deg}deg)`;
-      setTimeout(() => cube.classList.remove('snap'), 750);
-    }
-    function cubeTo(name) {
-      const el = document.getElementById('sec-' + name);
-      if (!el) return;
-      cubeAnimating = true;
-      cubeRotateTo(cubeRots[name]);
-      cubeSetActive(name);
-      window.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
-      setTimeout(() => { cubeAnimating = false; }, 800);
-    }
+function cubeSetActive(name) {
+  cubeCur = name;
+  cubeSections.forEach(s => {
+    document.getElementById('lbl-' + s).classList.toggle('active', s === name);
+    document.getElementById('dot-' + s).classList.toggle('active', s === name);
+  });
+}
 
-    window.addEventListener('scroll', () => {
-      cubeNav.classList.add('hidden');
-      clearTimeout(cubeScrollTimer);
-      if (!cubeAnimating) {
-        let activeName = 'gallery';
-        cubeSections.forEach(s => {
-          const el = document.getElementById('sec-' + s);
-          if (el && window.scrollY >= el.offsetTop - window.innerHeight / 2) {
-            activeName = s;
-          }
-        });
-        cube.style.setProperty('--base-rot', cubeRots[activeName] + 'deg');
-        cube.style.transform = `rotateX(${cubeRots[activeName]}deg)`;
-        cubeSetActive(activeName);
-      }
-      cubeScrollTimer = setTimeout(() => {
-        cubeNav.classList.remove('hidden');
-      }, 900);
+function cubeRotateTo(name) {
+  cube.style.animation = 'none';
+  cube.style.setProperty('--rx', cubeRots[name] + 'deg');
+  cube.style.transform = `rotateX(${cubeRots[name]}deg)`;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    cube.style.animation = '';
+  }));
+}
+
+function cubeTo(name) {
+  const el = document.getElementById('sec-' + name);
+  if (!el) return;
+  cubeAnimating = true;
+  cubeRotateTo(name);
+  cubeSetActive(name);
+  window.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
+  setTimeout(() => { cubeAnimating = false; }, 700);
+}
+
+window.addEventListener('scroll', () => {
+  cubeNav.classList.add('out');
+  clearTimeout(cubeTimer);
+  if (!cubeAnimating) {
+    let active = 'gallery';
+    cubeSections.forEach(s => {
+      const el = document.getElementById('sec-' + s);
+      if (el && window.scrollY >= el.offsetTop - window.innerHeight / 2) active = s;
     });
+    if (active !== cubeCur) { cubeRotateTo(active); cubeSetActive(active); }
+  }
+  cubeTimer = setTimeout(() => cubeNav.classList.remove('out'), 850);
+});
   </script>
 </body>
 </html>

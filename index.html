@@ -3,187 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-
   <title>Studio Christopher</title>
-
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #f5f4f0;
-      font-family: system-ui, sans-serif;
-      min-height: 100vh;
-    }
-
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#f5f4f0; font-family:system-ui,sans-serif; min-height:100vh; }
+ 
     /* ── HEADER ── */
-    header {
-      padding: 3rem 3rem 1.5rem;
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-    }
-    header h1 {
-      font-size: 1rem;
-      font-weight: 400;
-      letter-spacing: 0.04em;
-      color: #111;
-    }
-    header span {
-      font-size: 0.8rem;
-      color: #999;
-      letter-spacing: 0.04em;
-    }
-
+    header { padding:3rem 3rem 1.5rem; display:flex; align-items:baseline; justify-content:space-between; }
+    header h1 { font-size:1rem; font-weight:400; letter-spacing:0.04em; color:#111; }
+    header span { font-size:0.8rem; color:#999; letter-spacing:0.04em; }
+ 
     /* ── MASONRY GRID ── */
-    .gallery {
-      columns: 3;
-      column-gap: 12px;
-      padding: 0 3rem 4rem;
-    }
-    @media (max-width: 900px) { .gallery { columns: 2; padding: 0 1.5rem 3rem; } }
-    @media (max-width: 500px) { .gallery { columns: 1; padding: 0 1rem 2rem; } }
-
-    .gallery-item {
-      break-inside: avoid;
-      margin-bottom: 12px;
-      overflow: hidden;
-      cursor: zoom-in;
-      background: #e8e6e1;
-    }
-    .gallery-item img {
-      width: 100%;
-      display: block;
-      transition: transform 0.5s ease, opacity 0.3s;
-      opacity: 0;
-    }
-    .gallery-item img.loaded { opacity: 1; }
-    .gallery-item:hover img { transform: scale(1.02); }
-    .gallery-item video {
-      width: 100%;
-      display: block;
-      transition: transform 0.5s ease;
-    }
-    .gallery-item:hover video { transform: scale(1.02); }
-    
-<!-- CUBE NAV -->
+    .gallery { columns:3; column-gap:12px; padding:0 3rem 4rem; }
+    @media (max-width:900px) { .gallery { columns:2; padding:0 1.5rem 3rem; } }
+    @media (max-width:500px) { .gallery { columns:1; padding:0 1rem 2rem; } }
+    .gallery-item { break-inside:avoid; margin-bottom:12px; overflow:hidden; cursor:zoom-in; background:#e8e6e1; }
+    .gallery-item img { width:100%; display:block; transition:transform 0.5s ease, opacity 0.3s; opacity:0; }
+    .gallery-item img.loaded { opacity:1; }
+    .gallery-item:hover img { transform:scale(1.02); }
+    .gallery-item video { width:100%; display:block; transition:transform 0.5s ease; }
+    .gallery-item:hover video { transform:scale(1.02); }
+ 
+    /* ── BIO ── */
+    .bio-wrap { padding:6rem 3rem; max-width:640px; }
+    @media (max-width:900px) { .bio-wrap { padding:4rem 1.5rem; } }
+    @media (max-width:500px) { .bio-wrap { padding:3rem 1rem; } }
+    .bio-label { font-family:'Spectral',Georgia,serif; font-size:9px; font-weight:300; letter-spacing:0.18em; text-transform:uppercase; color:rgba(0,0,0,0.3); margin-bottom:1.5rem; display:block; }
+    .bio-text { font-family:'Spectral',Georgia,serif; font-size:15px; font-weight:300; line-height:1.8; color:rgba(0,0,0,0.75); }
+    .bio-text p + p { margin-top:1.2rem; }
+ 
+    /* ── LIGHTBOX ── */
+    #lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.92); display:none; align-items:center; justify-content:center; z-index:100; cursor:zoom-out; }
+    #lightbox.open { display:flex; }
+    #lightbox img { max-width:90vw; max-height:90vh; object-fit:contain; display:block; pointer-events:none; transition:opacity 0.2s; }
+    #lightbox img.fade { opacity:0; }
+    .lb-btn { position:absolute; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.3); font-size:2rem; padding:1.5rem; transition:color 0.15s; z-index:5; pointer-events:all; }
+    .lb-btn:hover { color:#fff; }
+    #lb-prev { left:0; } #lb-next { right:0; }
+    .lb-btn.hidden { display:none; }
+    #lb-close { position:absolute; top:1.5rem; right:1.5rem; background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.4); font-size:1.5rem; transition:color 0.15s; }
+    #lb-close:hover { color:#fff; }
+    #lb-counter { position:absolute; bottom:1.5rem; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.3); font-size:0.8rem; letter-spacing:0.06em; }
+ 
+    /* ── CUBE NAV ── */
     .cnav { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:50; display:flex; flex-direction:column; align-items:center; gap:8px; transition:opacity 0.5s ease; }
-.cnav.out { opacity:0; pointer-events:none; }
-.cnav-inner { display:flex; align-items:center; }
-.nav-labels { display:flex; align-items:center; gap:16px; overflow:hidden; max-width:0; opacity:0; white-space:nowrap; padding-right:0; transition:max-width 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease, padding-right 0.5s ease; }
-.cnav-inner:hover .nav-labels,
-.cnav-inner.open .nav-labels { max-width:260px; opacity:1; padding-right:14px; }
-.nav-lbl { font-family:'Spectral',Georgia,serif; font-size:9px; font-weight:300; letter-spacing:0.16em; text-transform:uppercase; color:rgba(0,0,0,0.65); cursor:pointer; min-height:44px; display:flex; align-items:center; gap:3px; padding:0 2px; user-select:none; transition:color 0.2s; -webkit-tap-highlight-color:transparent; }
-.nav-lbl:hover, .nav-lbl:active { color:rgba(0,0,0,0.9); }
-.nav-lbl.active { color:rgba(0,0,0,0.9); }
-.nav-div { width:0.5px; height:10px; background:rgba(0,0,0,0.15); flex-shrink:0; }
-.nav-arrow { font-size:9px; opacity:0.6; }
-.cube-scene { width:36px; height:36px; perspective:240px; cursor:pointer; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
-.cube { width:36px; height:36px; position:relative; transform-style:preserve-3d; transition:transform 0.7s cubic-bezier(0.4,0,0.2,1); animation:cubeIdle 7s ease-in-out infinite; }
-.cube-face { position:absolute; width:36px; height:36px; background:rgba(245,244,240,0.94); border:0.5px solid rgba(0,0,0,0.12); }
-.face-front  { transform:translateZ(18px); }
-.face-back   { transform:rotateY(180deg) translateZ(18px); }
-.face-left   { transform:rotateY(-90deg) translateZ(18px); }
-.face-right  { transform:rotateY(90deg)  translateZ(18px); }
-.face-top    { transform:rotateX(90deg)  translateZ(18px); }
-.face-bottom { transform:rotateX(-90deg) translateZ(18px); }
-.cnav-inner:hover .cube,
-.cnav-inner.open .cube { animation-play-state:paused; }
-.cube-dots { display:flex; gap:4px; }
-.cube-dot { width:3px; height:3px; border-radius:50%; background:rgba(0,0,0,0.15); transition:background 0.25s; cursor:pointer; padding:5px; box-sizing:content-box; margin:-5px; -webkit-tap-highlight-color:transparent; }
-.cube-dot.active { background:rgba(0,0,0,0.45); }
-@keyframes cubeIdle {
-  0%   { transform:rotateY(var(--ry,0deg)) rotateX(0deg); }
-  25%  { transform:rotateY(calc(var(--ry,0deg)+6deg)) rotateX(3deg); }
-  50%  { transform:rotateY(var(--ry,0deg)) rotateX(-2deg); }
-  75%  { transform:rotateY(calc(var(--ry,0deg)-4deg)) rotateX(2deg); }
-  100% { transform:rotateY(var(--ry,0deg)) rotateX(0deg); }
-}
+    .cnav.out { opacity:0; pointer-events:none; }
+    .cnav-inner { display:flex; align-items:center; }
+    .nav-labels { display:flex; align-items:center; gap:16px; overflow:hidden; max-width:0; opacity:0; white-space:nowrap; padding-right:0; transition:max-width 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease, padding-right 0.5s ease; }
+    .cnav-inner:hover .nav-labels,
+    .cnav-inner.open .nav-labels { max-width:260px; opacity:1; padding-right:14px; }
+    .nav-lbl { font-family:'Spectral',Georgia,serif; font-size:9px; font-weight:300; letter-spacing:0.16em; text-transform:uppercase; color:rgba(0,0,0,0.65); cursor:pointer; min-height:44px; display:flex; align-items:center; gap:3px; padding:0 2px; user-select:none; transition:color 0.2s; -webkit-tap-highlight-color:transparent; }
+    .nav-lbl:hover, .nav-lbl:active { color:rgba(0,0,0,0.9); }
+    .nav-lbl.active { color:rgba(0,0,0,0.9); }
+    .nav-div { width:0.5px; height:10px; background:rgba(0,0,0,0.15); flex-shrink:0; }
+    .nav-arrow { font-size:9px; opacity:0.6; }
+    .cube-scene { width:36px; height:36px; perspective:240px; cursor:pointer; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
+    .cube { width:36px; height:36px; position:relative; transform-style:preserve-3d; transition:transform 0.7s cubic-bezier(0.4,0,0.2,1); animation:cubeIdle 7s ease-in-out infinite; }
+    .cube-face { position:absolute; width:36px; height:36px; background:rgba(245,244,240,0.94); border:0.5px solid rgba(0,0,0,0.12); }
+    .face-front  { transform:translateZ(18px); }
+    .face-back   { transform:rotateY(180deg) translateZ(18px); }
+    .face-left   { transform:rotateY(-90deg) translateZ(18px); }
+    .face-right  { transform:rotateY(90deg)  translateZ(18px); }
+    .face-top    { transform:rotateX(90deg)  translateZ(18px); }
+    .face-bottom { transform:rotateX(-90deg) translateZ(18px); }
+    .cnav-inner:hover .cube,
+    .cnav-inner.open .cube { animation-play-state:paused; }
+    .cube-dots { display:flex; gap:4px; }
+    .cube-dot { width:3px; height:3px; border-radius:50%; background:rgba(0,0,0,0.15); transition:background 0.25s; cursor:pointer; padding:5px; box-sizing:content-box; margin:-5px; -webkit-tap-highlight-color:transparent; }
+    .cube-dot.active { background:rgba(0,0,0,0.45); }
+    @keyframes cubeIdle {
+      0%   { transform:rotateY(var(--ry,0deg)) rotateX(0deg); }
+      25%  { transform:rotateY(calc(var(--ry,0deg)+6deg)) rotateX(3deg); }
+      50%  { transform:rotateY(var(--ry,0deg)) rotateX(-2deg); }
+      75%  { transform:rotateY(calc(var(--ry,0deg)-4deg)) rotateX(2deg); }
+      100% { transform:rotateY(var(--ry,0deg)) rotateX(0deg); }
+    }
   </style>
 </head>
 <body>
-
+ 
   <header>
     <h1>Paul; Strategy & Creative Architecture</h1>
     <span id="photo-count"></span>
   </header>
-
-<!--Nav ID-->
- <!-- GALLERY -->
-<section id="sec-gallery">
-  <div class="gallery" id="gallery"></div>
-</section>
-
-<!-- UPLOAD -->
-<section id="sec-upload">
-  <div class="bio-wrap">
-    <span class="bio-label">Background</span>
-    <div class="bio-text">
-      <p>[Biography]</p>
-    </div>
-  </div>
-</section>
-
-          <div class="term-winbar">
-            <div class="term-dot" style="background:#ff5f57"></div>
-            <div class="term-dot" style="background:#febc2e"></div>
-            <div class="term-dot" style="background:#28c840"></div>
-            <span class="term-wintitle">:)</span>
-          </div>
-
-          <div class="term-prompt">
-            <span class="term-ps">~</span>
-            <span>./Thanks for coming.</span>
-          </div>
-
-          <div class="term-name">Paul Christopher</div>
-          <div class="term-role">CREATIVE ARCHITECTURE & STRATEGY</div>
-
-          <hr class="term-divider" />
-
-          <div class="term-contacts">
-            <div class="term-row">
-              <span class="term-key">email</span>
-              <span class="term-val">
-                <a href="mailto:paulcruback@gmail.com" style="color:#79c0ff">paulcruback@gmail.com</a>
-              </span>
-            </div>
-            <div class="term-row">
-              <span class="term-key">git</span>
-              <span class="term-val">
-                <a href="https://paul-ruback.github.io/portfolio/" target="_blank" rel="noopener" style="color:#f0a050">github.com/paul-ruback</a>
-              </span>
-            </div>
-            <div class="term-row">
-              <span class="term-key">linkedin</span>
-              <span class="term-val">
-                <a href="https://linkedin.com/in/paulruback" target="_blank" rel="noopener" style="color:#f5c842">linkedin.com/in/paulruback</a>
-              </span>
-            </div>
-            <div class="term-row">
-              <span class="term-key">location</span>
-              <span class="term-val-plain">Paris & New York.</span>
-            </div>
-          </div>
-
-          <div class="term-footer">
-            <span class="term-ps">~</span>
-            <span class="term-cursor"></span>
-          </div>
-
-        </div>
+ 
+  <!-- GALLERY -->
+  <section id="sec-gallery">
+    <div class="gallery" id="gallery"></div>
+  </section>
+ 
+  <!-- UPLOAD -->
+  <section id="sec-upload">
+    <div class="bio-wrap">
+      <span class="bio-label">Background</span>
+      <div class="bio-text">
+        <p>[Biography]</p>
       </div>
     </div>
   </section>
-
+ 
   <!-- LIGHTBOX -->
   <div id="lightbox">
     <button class="lb-btn hidden" id="lb-prev">&#8592;</button>
@@ -192,63 +115,50 @@
     <button id="lb-close">&#10005;</button>
     <span id="lb-counter"></span>
   </div>
-  
-<!-- CUBE NAV -->
- <nav class="cnav" id="cnav">
-  <div class="cnav-inner" id="ci">
-    <div class="nav-labels">
-      <span class="nav-lbl" id="lbl-gallery" onclick="cubeTo('gallery')">Gallery</span>
-      <div class="nav-div"></div>
-      <span class="nav-lbl" id="lbl-upload" onclick="cubeTo('upload')">Upload</span>
-      <div class="nav-div"></div>
-      <span class="nav-lbl" onclick="window.location.href='iteration.html'">Iteration <span class="nav-arrow">→</span></span>
-    </div>
-    <div class="cube-scene" id="cube-scene">
-      <div class="cube" id="cube" style="--ry:0deg">
-        <div class="cube-face face-front"></div>
-        <div class="cube-face face-back"></div>
-        <div class="cube-face face-left"></div>
-        <div class="cube-face face-right"></div>
-        <div class="cube-face face-top"></div>
-        <div class="cube-face face-bottom"></div>
+ 
+  <!-- CUBE NAV -->
+  <nav class="cnav" id="cnav">
+    <div class="cnav-inner" id="ci">
+      <div class="nav-labels">
+        <span class="nav-lbl" id="lbl-gallery" onclick="cubeTo('gallery')">Gallery</span>
+        <div class="nav-div"></div>
+        <span class="nav-lbl" id="lbl-upload" onclick="cubeTo('upload')">Upload</span>
+        <div class="nav-div"></div>
+        <span class="nav-lbl" onclick="window.location.href='iteration.html'">Iteration <span class="nav-arrow">→</span></span>
+      </div>
+      <div class="cube-scene" id="cube-scene">
+        <div class="cube" id="cube" style="--ry:0deg">
+          <div class="cube-face face-front"></div>
+          <div class="cube-face face-back"></div>
+          <div class="cube-face face-left"></div>
+          <div class="cube-face face-right"></div>
+          <div class="cube-face face-top"></div>
+          <div class="cube-face face-bottom"></div>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="cube-dots">
-    <div class="cube-dot active" id="dot-gallery"></div>
-    <div class="cube-dot"        id="dot-upload"></div>
-    <div class="cube-dot"        id="dot-iter"></div>
-  </div>
-</nav>
-
+    <div class="cube-dots">
+      <div class="cube-dot active" id="dot-gallery"></div>
+      <div class="cube-dot"        id="dot-upload"></div>
+      <div class="cube-dot"        id="dot-iter"></div>
+    </div>
+  </nav>
+ 
   <script>
-const photos = [
-  "photo1.jpg",
- { type: "video", src: "movie1.mp4" },
-  "photo5.jpg",
- "photo2.jpg",
- { type: "video", src: "movie2.mov" },
-  "photo6.jpg",
- "photo6.1.jpg",
- "photo30.jpg",
-  "photo8.jpg",
- "photo7.jpg",
- "photo31.jpg",
- { type: "video", src: "movie3.mov" },
- { type: "video", src: "movie4.mov" },
-  "photo9.jpg",
-  "photo10.jpg",
-  "photo11.jpg",
-  "photo12.jpg",
-  "photo13.jpg",
- "photo15.jpg",
- "photo16.jpg",
- "photo17.jpg",
- "photo18.jpg",
- "photo20.jpg",
- "photo21.jpg",
-];
-    // ── GALLERY ──
+    const photos = [
+      "photo1.jpg",
+      { type:"video", src:"movie1.mp4" },
+      "photo5.jpg",
+      "photo2.jpg",
+      { type:"video", src:"movie2.mov" },
+      "photo6.jpg","photo6.1.jpg","photo30.jpg","photo8.jpg","photo7.jpg","photo31.jpg",
+      { type:"video", src:"movie3.mov" },
+      { type:"video", src:"movie4.mov" },
+      "photo9.jpg","photo10.jpg","photo11.jpg","photo12.jpg","photo13.jpg",
+      "photo15.jpg","photo16.jpg","photo17.jpg",
+      "photo18.jpg","photo20.jpg","photo21.jpg",
+    ];
+ 
     const gallery   = document.getElementById('gallery');
     const lightbox  = document.getElementById('lightbox');
     const lbImg     = document.getElementById('lb-img');
@@ -257,66 +167,27 @@ const photos = [
     const lbClose   = document.getElementById('lb-close');
     const lbCounter = document.getElementById('lb-counter');
     let current = 0;
-
+ 
     document.getElementById('photo-count').textContent = photos.length + ' works';
-
+ 
     photos.forEach((src, i) => {
       const item = document.createElement('div');
       item.className = 'gallery-item';
       if (src.type === 'video') {
-        const video = document.createElement('video');
-        video.src = src.src;
-        video.muted = true;
-        video.loop = true;
-        video.playsInline = true;
-        video.autoplay = true;
-        item.appendChild(video);
+        const v = document.createElement('video');
+        v.src = src.src; v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true;
+        item.appendChild(v);
       } else {
         const img = document.createElement('img');
-        img.src = src;
-        img.alt = '';
+        img.src = src; img.alt = '';
         img.addEventListener('load', () => img.classList.add('loaded'));
         item.appendChild(img);
       }
       item.addEventListener('click', (e) => { e.stopPropagation(); openLightbox(i); });
       gallery.appendChild(item);
     });
-    
-/* ── UPLOAD / BIO ── */
-    .bio-wrap {
-  padding: 6rem 3rem;
-  max-width: 640px;
-}
-@media (max-width: 900px) { .bio-wrap { padding: 4rem 1.5rem; } }
-@media (max-width: 500px) { .bio-wrap { padding: 3rem 1rem; } }
-
-.bio-label {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 9px;
-  font-weight: 300;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(0,0,0,0.3);
-  margin-bottom: 1.5rem;
-  display: block;
-}
-.bio-text {
-  font-family: 'Spectral', Georgia, serif;
-  font-size: 15px;
-  font-weight: 300;
-  line-height: 1.8;
-  color: rgba(0,0,0,0.75);
-}
-.bio-text p + p {
-  margin-top: 1.2rem;
-}
-
-    // ── LIGHTBOX ──
-    function openLightbox(index) {
-      current = index;
-      updateLightbox();
-      lightbox.classList.add('open');
-    }
+ 
+    function openLightbox(i) { current = i; updateLightbox(); lightbox.classList.add('open'); }
     function updateLightbox() {
       lbImg.classList.add('fade');
       setTimeout(() => {
@@ -328,83 +199,80 @@ const photos = [
       lbNext.classList.toggle('hidden', current === photos.length - 1);
     }
     function closeLightbox() { lightbox.classList.remove('open'); }
-
     lbPrev.addEventListener('click',  (e) => { e.stopPropagation(); current--; updateLightbox(); });
     lbNext.addEventListener('click',  (e) => { e.stopPropagation(); current++; updateLightbox(); });
     lbClose.addEventListener('click', closeLightbox);
     lightbox.addEventListener('click', closeLightbox);
-
     document.addEventListener('keydown', e => {
       if (!lightbox.classList.contains('open')) return;
       if (e.key === 'ArrowLeft'  && current > 0)                { current--; updateLightbox(); }
       if (e.key === 'ArrowRight' && current < photos.length - 1){ current++; updateLightbox(); }
       if (e.key === 'Escape') closeLightbox();
     });
-
     let touchStartX = 0;
-    lightbox.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    lightbox.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive:true });
     lightbox.addEventListener('touchend', e => {
-      const delta = e.changedTouches[0].clientX - touchStartX;
-      if (delta > 50  && current > 0)                { current--; updateLightbox(); }
-      if (delta < -50 && current < photos.length - 1){ current++; updateLightbox(); }
+      const d = e.changedTouches[0].clientX - touchStartX;
+      if (d > 50  && current > 0)                { current--; updateLightbox(); }
+      if (d < -50 && current < photos.length - 1){ current++; updateLightbox(); }
     });
-
-   // ── CUBE NAV ──
-const cnav = document.getElementById('cnav');
-const ci   = document.getElementById('ci');
-const cube = document.getElementById('cube');
-const cubeScene = document.getElementById('cube-scene');
-const sections = ['gallery','upload'];
-const rots = { gallery:0, upload:-90 };
-let navTimer=null, busy=false, cur='gallery', open=false;
-const isTouch = () => window.matchMedia('(hover:none)').matches;
-
-function setActive(name) {
-  cur = name;
-  sections.forEach(s => {
-    const lbl = document.getElementById('lbl-'+s);
-    const dot = document.getElementById('dot-'+s);
-    if(lbl) lbl.classList.toggle('active', s===name);
-    if(dot) dot.classList.toggle('active', s===name);
-  });
-}
-function rotateTo(name) {
-  cube.style.animation = 'none';
-  cube.style.setProperty('--ry', rots[name]+'deg');
-  cube.style.transform = `rotateY(${rots[name]}deg)`;
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{ cube.style.animation=''; }));
-}
-function cubeTo(name) {
-  const el = document.getElementById('sec-'+name);
-  if(!el) return;
-  busy = true;
-  rotateTo(name); setActive(name);
-  window.scrollTo({ top:el.offsetTop, behavior:'smooth' });
-  open = false; ci.classList.remove('open');
-  setTimeout(()=>{ busy=false; }, 700);
-}
-cubeScene.addEventListener('click', ()=>{
-  if(!isTouch()) return;
-  open = !open;
-  ci.classList.toggle('open', open);
-});
-document.addEventListener('click', e=>{
-  if(!isTouch()) return;
-  if(!cnav.contains(e.target)){ open=false; ci.classList.remove('open'); }
-});
-window.addEventListener('scroll', ()=>{
-  cnav.classList.add('out');
-  clearTimeout(navTimer);
-  if(!busy){
-    let active='gallery';
-    sections.forEach(s=>{
-      const el=document.getElementById('sec-'+s);
-      if(el && window.scrollY>=el.offsetTop-window.innerHeight/2) active=s;
+ 
+    // ── CUBE NAV ──
+    const cnav      = document.getElementById('cnav');
+    const ci        = document.getElementById('ci');
+    const cube      = document.getElementById('cube');
+    const cubeScene = document.getElementById('cube-scene');
+    const sections  = ['gallery','upload'];
+    const rots      = { gallery:0, upload:-90 };
+    let navTimer=null, busy=false, cur='gallery', open=false;
+    const isTouch = () => window.matchMedia('(hover:none)').matches;
+ 
+    function setActive(name) {
+      cur = name;
+      sections.forEach(s => {
+        const lbl = document.getElementById('lbl-'+s);
+        const dot = document.getElementById('dot-'+s);
+        if(lbl) lbl.classList.toggle('active', s===name);
+        if(dot) dot.classList.toggle('active', s===name);
+      });
+    }
+    function rotateTo(name) {
+      cube.style.animation = 'none';
+      cube.style.setProperty('--ry', rots[name]+'deg');
+      cube.style.transform = `rotateY(${rots[name]}deg)`;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{ cube.style.animation=''; }));
+    }
+    function cubeTo(name) {
+      const el = document.getElementById('sec-'+name);
+      if(!el) return;
+      busy = true;
+      rotateTo(name); setActive(name);
+      window.scrollTo({ top:el.offsetTop, behavior:'smooth' });
+      open = false; ci.classList.remove('open');
+      setTimeout(()=>{ busy=false; }, 700);
+    }
+    cubeScene.addEventListener('click', ()=>{
+      if(!isTouch()) return;
+      open = !open;
+      ci.classList.toggle('open', open);
     });
-    if(active!==cur){ rotateTo(active); setActive(active); }
-  }
-  navTimer = setTimeout(()=>cnav.classList.remove('out'), 850);
-});
+    document.addEventListener('click', e=>{
+      if(!isTouch()) return;
+      if(!cnav.contains(e.target)){ open=false; ci.classList.remove('open'); }
+    });
+    window.addEventListener('scroll', ()=>{
+      cnav.classList.add('out');
+      clearTimeout(navTimer);
+      if(!busy){
+        let active='gallery';
+        sections.forEach(s=>{
+          const el=document.getElementById('sec-'+s);
+          if(el && window.scrollY>=el.offsetTop-window.innerHeight/2) active=s;
+        });
+        if(active!==cur){ rotateTo(active); setActive(active); }
+      }
+      navTimer = setTimeout(()=>cnav.classList.remove('out'), 850);
+    });
   </script>
 </body>
 </html>

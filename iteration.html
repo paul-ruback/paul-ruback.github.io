@@ -1,0 +1,764 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+   <!--
+  Word Ring — game prototype v2.
+  • Click the tile to expand the playfield.
+  • Tap (or press SPACE) the word at center to launch it.
+  • Land on empty arc → tether outward. Land on existing word → it pushes
+    out, your new word takes the inner spot (stack capped at 2).
+  • Hit an inward DIP on the ring → the word falls quietly into it and the
+    sentence you built is revealed.
+-->
+
+<style>
+  #wr-root, #wr-root * { box-sizing: border-box; }
+
+  #wr-root {
+    --wr-ink:    #1a1a1a;
+    --wr-ink-2:  #5a5a5a;
+    --wr-ink-3:  #9a9a9a;
+    --wr-mono:   ui-monospace, "SF Mono", Menlo, monospace;
+    --wr-serif:  'Spectral', Georgia, serif;
+
+    position: relative;
+    width: 100%;
+    min-height: 360px;
+    font-family: var(--wr-mono);
+    color: var(--wr-ink);
+  }
+
+  /* ── collapsed tile ───────────────────────────────────────────────── */
+  .wr-tile {
+    position: relative;
+    width: 220px; height: 220px;
+    margin: 60px auto;
+    border: 1px solid var(--wr-ink-3);
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px;
+    transition: transform 0.25s ease, border-color 0.25s ease;
+  }
+  .wr-tile:hover { border-color: var(--wr-ink); transform: scale(1.02); }
+  .wr-tile-svg { width: 110px; height: 110px; }
+  .wr-tile-label {
+    font-size: 10px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--wr-ink-2);
+  }
+  @keyframes wr-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  /* ── expanded stage ───────────────────────────────────────────────── */
+  .wr-stage {
+    position: fixed; inset: 0;
+    background: rgba(245, 243, 238, 0.97);
+    z-index: 9000;
+    display: none;
+    align-items: center; justify-content: center;
+  }
+  .wr-stage.open {
+    display: flex;
+    animation: wr-fadein 0.3s ease forwards;
+  }
+  @keyframes wr-fadein { from { opacity: 0; } to { opacity: 1; } }
+
+  .wr-playfield {
+    position: relative;
+    width: min(680px, 90vw);
+    height: min(680px, 90vh);
+    max-width: 680px; max-height: 680px;
+  }
+  .wr-svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    touch-action: manipulation;  /* prevent double-tap zoom on mobile */
+  }
+
+  /* HUD */
+  .wr-hud {
+    position: absolute;
+    top: 14px; left: 14px; right: 14px;
+    display: flex; justify-content: space-between;
+    font-size: 10px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--wr-ink-2);
+    pointer-events: none; user-select: none;
+  }
+  .wr-hud .wr-best { color: var(--wr-ink-3); }
+  .wr-hint {
+    position: absolute;
+    bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--wr-ink-3);
+    pointer-events: none; user-select: none;
+  }
+
+  /* End-of-run reveal */
+  .wr-over {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px;
+    pointer-events: none;
+    padding: 40px;
+  }
+  .wr-over.show { display: flex; pointer-events: auto; }
+
+  /* the framed sentence — it IS the reward */
+  .wr-frame {
+    border: 1px solid var(--wr-ink);
+    padding: 28px 38px;
+    max-width: 540px;
+    text-align: center;
+    background: rgba(245, 243, 238, 0.95);
+  }
+  .wr-over-sentence {
+    font-family: var(--wr-serif);
+    font-style: italic;
+    font-size: 1.7rem;
+    color: var(--wr-ink);
+    line-height: 1.5;
+  }
+  .wr-over-meta {
+    margin-top: 18px;
+    font-family: var(--wr-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--wr-ink-3);
+  }
+  .wr-over-restart {
+    margin-top: 10px;
+    font-family: var(--wr-mono);
+    font-size: 10px; letter-spacing: 0.18em;
+    text-transform: uppercase;
+    background: transparent; color: var(--wr-ink);
+    border: 1px solid var(--wr-ink);
+    padding: 8px 18px; cursor: pointer;
+  }
+  .wr-over-restart:hover {
+    background: var(--wr-ink);
+    color: #f5f3ee;
+  }
+</style>
+
+<div id="wr-root">
+  <!-- collapsed tile -->
+  <div class="wr-tile" id="wr-tile">
+    <svg class="wr-tile-svg" viewBox="0 0 100 100">
+      <g style="transform-origin: 50px 50px; animation: wr-spin 20s linear infinite;">
+        <circle cx="50" cy="50" r="32" fill="none" stroke="#1a1a1a" stroke-width="1" />
+        <line x1="50" y1="18" x2="50" y2="6"  stroke="#1a1a1a" stroke-width="1" />
+        <line x1="50" y1="82" x2="50" y2="94" stroke="#1a1a1a" stroke-width="1" />
+        <line x1="18" y1="50" x2="6"  y2="50" stroke="#1a1a1a" stroke-width="1" />
+      </g>
+    </svg>
+    <div class="wr-tile-label">word-play</div>
+  </div>
+
+  <!-- expanded stage -->
+  <div class="wr-stage" id="wr-stage">
+    <div class="wr-playfield" id="wr-playfield">
+      <div class="wr-hud">
+        <span><span id="wr-score">0</span> words</span>
+        <span class="wr-best">longest · <span id="wr-best">0</span></span>
+      </div>
+
+      <svg class="wr-svg" id="wr-svg" viewBox="0 0 600 600">
+        <!-- guide ring -->
+        <circle id="wr-ring" cx="300" cy="300" r="180"
+                fill="none" stroke="#1a1a1a" stroke-width="1.2" />
+
+        <!-- target tick at 12 o'clock -->
+        <g id="wr-target">
+          <line x1="300" y1="105" x2="300" y2="120" stroke="#1a1a1a" stroke-width="1" />
+          <line x1="290" y1="112" x2="310" y2="112" stroke="#1a1a1a" stroke-width="1" />
+        </g>
+
+        <!-- dips (negative space cut into the ring, render-time) -->
+        <g id="wr-dips"></g>
+
+        <!-- spokes & landed words -->
+        <g id="wr-spokes"></g>
+
+        <!-- flying word during launch -->
+        <text id="wr-flying"
+              x="300" y="300"
+              text-anchor="middle" dominant-baseline="central"
+              font-family="ui-monospace, monospace" font-size="22"
+              fill="#1a1a1a" opacity="0"></text>
+
+        <!-- center word, clickable -->
+        <g id="wr-center" style="cursor: pointer;">
+          <!-- invisible larger hit area for easier tapping on mobile -->
+          <circle cx="300" cy="300" r="60" fill="transparent" />
+          <text id="wr-current"
+                x="300" y="300"
+                text-anchor="middle" dominant-baseline="central"
+                font-family="ui-monospace, monospace" font-size="22"
+                fill="#1a1a1a"></text>
+        </g>
+      </svg>
+
+      <div class="wr-hint">tap / space-bar — play · click outside to go</div>
+
+      <div class="wr-over" id="wr-over">
+        <div class="wr-frame">
+          <div class="wr-over-sentence" id="wr-over-sentence"></div>
+          <div class="wr-over-meta" id="wr-over-meta"></div>
+        </div>
+        <button class="wr-over-restart" id="wr-restart">play again</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+
+  function init() {
+
+  // ── word pool — expanded but curated for literary tone ──────────────
+  // The pool is the game's voice. Kept mostly 1–2 syllable, common,
+  // and visually short. Sized to give thousands of combinations without
+  // bloating the bundle. Easy to extend later.
+  const WORDS = {
+    article:     ["the", "a"],
+
+    subject:     ["bird", "cat", "fox", "moon", "child", "river", "ghost",
+                  "wolf", "stranger", "doctor", "tree", "wind", "sailor",
+                  "ocean", "thief", "lamp", "house", "stone", "fire",
+                  "shadow", "city", "kite", "boy", "girl", "mother",
+                  "father", "dog", "horse", "deer", "owl", "raven",
+                  "saint", "soldier", "dancer", "painter", "poet",
+                  "stranger", "stranger", "snow", "rain", "sun", "star",
+                  "mountain", "valley", "harbor", "lighthouse", "bell",
+                  "clock", "mirror", "door", "window", "garden", "rose",
+                  "tide", "storm", "thunder", "dawn", "dusk"],
+
+    verb:        ["flies", "sleeps", "runs", "watches", "dreams", "sings",
+                  "writes", "waits", "burns", "follows", "remembers",
+                  "finds", "loses", "carries", "breaks", "holds", "spins",
+                  "rises", "falls", "calls", "leaves", "returns", "opens",
+                  "closes", "whispers", "shouts", "kneels", "stands",
+                  "drifts", "climbs", "wanders", "vanishes", "appears",
+                  "listens", "speaks", "answers", "asks", "knows", "forgets",
+                  "trembles", "shines", "fades", "circles", "gathers",
+                  "scatters", "lights", "darkens"],
+
+    adjective:   ["quiet", "small", "ancient", "warm", "lonely", "bright",
+                  "wild", "broken", "strange", "soft", "blue", "empty",
+                  "heavy", "tender", "swift", "narrow", "patient",
+                  "endless", "secret", "open", "still", "restless",
+                  "golden", "silver", "hollow", "weary", "tireless",
+                  "fragile", "stubborn", "honest", "uncertain", "fearless",
+                  "sacred", "humble", "rough", "smooth", "sharp", "dull",
+                  "cold", "frozen", "dim", "vast", "thin", "deep"],
+
+    object:      ["bread", "song", "letter", "stone", "key", "thread",
+                  "name", "fire", "promise", "garden", "window", "story",
+                  "silence", "answer", "map", "candle", "feather",
+                  "mountain", "memory", "bridge", "coin", "ring", "book",
+                  "lantern", "rope", "anchor", "shell", "tide", "hour",
+                  "minute", "voice", "echo", "shadow", "ghost", "light",
+                  "dark", "rain", "leaf", "branch", "root", "salt",
+                  "honey", "wine", "blade", "thread", "needle", "sail"],
+
+    preposition: ["in", "through", "beyond", "near", "under", "across",
+                  "between", "behind", "before", "beside", "within",
+                  "without", "against", "toward"],
+
+    place:       ["forest", "river", "city", "darkness", "morning", "snow",
+                  "doorway", "field", "harbor", "kitchen", "valley",
+                  "rain", "summer", "winter", "spring", "autumn", "twilight",
+                  "midnight", "dawn", "shore", "desert", "mountain",
+                  "garden", "alley", "cathedral", "library", "attic",
+                  "basement", "tower", "meadow", "orchard", "vineyard",
+                  "marsh", "cave", "tunnel", "stairwell"],
+  };
+
+  // ── templates — what kind of sentences we build ─────────────────────
+  // The game cycles these as the player completes them. Each adds slight
+  // variation in cadence so the emerging sentences feel different.
+  const TEMPLATES = [
+    ["article", "subject", "verb", "object"],
+    ["article", "adjective", "subject", "verb"],
+    ["subject", "verb", "preposition", "place"],
+    ["article", "subject", "verb", "adjective", "object"],
+    ["article", "adjective", "subject", "verb", "preposition", "place"],
+    ["subject", "verb", "article", "adjective", "object"],
+    ["preposition", "place", "article", "subject", "verb"],
+  ];
+
+  // ── geometry ────────────────────────────────────────────────────────
+  const CENTER_X = 300;
+  const CENTER_Y = 300;
+  const RING_R   = 180;
+  const TIER_1_R = 220;   // inner stack (closer to ring)
+  const TIER_2_R = 270;   // outer stack (pushed out)
+  const TARGET_ANGLE = -Math.PI / 2;  // 12 o'clock, screen coords
+
+  const DIP_WIDTH = 0.14; // ~8° per dip — small enough to dodge, threatening enough
+
+  // ── DOM refs ────────────────────────────────────────────────────────
+  const tile      = document.getElementById("wr-tile");
+  const stage     = document.getElementById("wr-stage");
+  const playfield = document.getElementById("wr-playfield");
+  const svg       = document.getElementById("wr-svg");
+  const dipsG     = document.getElementById("wr-dips");
+  const spokesG   = document.getElementById("wr-spokes");
+  const flying    = document.getElementById("wr-flying");
+  const center    = document.getElementById("wr-center");
+  const current   = document.getElementById("wr-current");
+  const scoreEl   = document.getElementById("wr-score");
+  const bestEl    = document.getElementById("wr-best");
+  const overEl    = document.getElementById("wr-over");
+  const overSent  = document.getElementById("wr-over-sentence");
+  const overMeta  = document.getElementById("wr-over-meta");
+  const restartBtn= document.getElementById("wr-restart");
+
+  // ── state ───────────────────────────────────────────────────────────
+  let isOpen   = false;
+  let ringAngle = 0;
+  let ringSpeed = 0.00075;
+  // each entry: { word, angle, part, tier }   tier 1 = inner, 2 = outer
+  let landed   = [];
+  // each entry: { angle, width }
+  let dips     = [];
+  let template = [];
+  let slotIdx  = 0;
+  let currentWord = "";
+  let currentPart = "";
+  let score    = 0;
+  let best     = parseInt(localStorage.getItem("wr-best") || "0", 10);
+  let launching= false;
+  let dead     = false;
+  let rafId    = null;
+  let lastTs   = 0;
+
+  bestEl.textContent = best;
+
+  // ── helpers ─────────────────────────────────────────────────────────
+  const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  function pickWord(part) { return rand(WORDS[part] || WORDS.subject); }
+
+  function newTemplate() {
+    template = rand(TEMPLATES);
+    slotIdx = 0;
+  }
+
+  function loadNextWord() {
+    if (slotIdx >= template.length) {
+      score += 3;  // small completion bonus
+      newTemplate();
+    }
+    currentPart = template[slotIdx];
+    currentWord = pickWord(currentPart);
+    current.textContent = currentWord;
+  }
+
+  // Normalize a signed angle delta to (-π, π]
+  function angDelta(a, b) {
+    let d = a - b;
+    while (d >  Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    return d;
+  }
+
+  // Pick a random angle that doesn't conflict with existing dips/words.
+  function freshAngle(forbidWidth) {
+    for (let i = 0; i < 40; i++) {
+      const a = Math.random() * 2 * Math.PI;
+      let ok = true;
+      for (const d of dips) {
+        if (Math.abs(angDelta(a, d.angle)) < (forbidWidth + d.width)) { ok = false; break; }
+      }
+      if (!ok) continue;
+      for (const l of landed) {
+        if (Math.abs(angDelta(a, l.angle)) < forbidWidth + 0.18) { ok = false; break; }
+      }
+      if (ok) return a;
+    }
+    return Math.random() * 2 * Math.PI;  // fall back to anywhere
+  }
+
+  // Pre-place dips at game start (Level 1: 2 dips).
+  function placeDips(n) {
+    dips = [];
+    for (let i = 0; i < n; i++) {
+      dips.push({ angle: freshAngle(DIP_WIDTH * 2), width: DIP_WIDTH });
+    }
+  }
+
+  // What's at the target right now? Returns:
+  //   { type: "dip" } if a dip is overhead
+  //   { type: "word", item, tier: 1|2|"full" } if a word stack is there
+  //   { type: "free" } otherwise
+  function whatIsAtTarget() {
+    // Target is at TARGET_ANGLE in screen coords.
+    // Each item's "screen angle" = item.angle + ringAngle.
+    // Find anything whose screen angle is within ~0.1 rad of target.
+    const HIT = 0.09;  // collision radius in radians
+
+    for (const d of dips) {
+      if (Math.abs(angDelta(d.angle + ringAngle, TARGET_ANGLE)) < (HIT + d.width / 2)) {
+        return { type: "dip" };
+      }
+    }
+    // collect any landed words near the target, grouped by their stack column
+    const hits = landed.filter(l =>
+      Math.abs(angDelta(l.angle + ringAngle, TARGET_ANGLE)) < HIT
+    );
+    if (hits.length === 0) return { type: "free" };
+    // sort by tier — if both tiers are occupied here, stack is full
+    const tiers = hits.map(h => h.tier);
+    if (tiers.includes(1) && tiers.includes(2)) {
+      return { type: "word", tier: "full", item: hits[0] };
+    }
+    // there's just one word here, on tier 1 (the normal case)
+    return { type: "word", tier: 1, item: hits[0] };
+  }
+
+  // ── render ──────────────────────────────────────────────────────────
+  function renderLanded() {
+    while (spokesG.firstChild) spokesG.removeChild(spokesG.firstChild);
+    for (const item of landed) {
+      const a = item.angle + ringAngle;
+      const innerR = RING_R;
+      const outerR = item.tier === 1 ? TIER_1_R : TIER_2_R;
+      const x1 = CENTER_X + innerR * Math.cos(a);
+      const y1 = CENTER_Y + innerR * Math.sin(a);
+      const x2 = CENTER_X + outerR * Math.cos(a);
+      const y2 = CENTER_Y + outerR * Math.sin(a);
+
+      // tether line
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x1); line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+      line.setAttribute("stroke", "#1a1a1a");
+      line.setAttribute("stroke-width", item.tier === 1 ? "1" : "0.7");
+      spokesG.appendChild(line);
+
+      // word slightly beyond the tether end
+      const labelR = outerR + 20;
+      const wx = CENTER_X + labelR * Math.cos(a);
+      const wy = CENTER_Y + labelR * Math.sin(a);
+      const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t.setAttribute("x", wx);
+      t.setAttribute("y", wy);
+      t.setAttribute("text-anchor", "middle");
+      t.setAttribute("dominant-baseline", "central");
+      t.setAttribute("font-family", "ui-monospace, monospace");
+      t.setAttribute("font-size", item.tier === 1 ? "16" : "14");
+      t.setAttribute("fill", item.tier === 1 ? "#1a1a1a" : "#5a5a5a");
+      t.textContent = item.word;
+      spokesG.appendChild(t);
+    }
+  }
+
+  function renderDips() {
+    while (dipsG.firstChild) dipsG.removeChild(dipsG.firstChild);
+    for (const d of dips) {
+      const a = d.angle + ringAngle;
+      // dip is a small inward notch — drawn as two tick marks creating a V
+      const a1 = a - d.width / 2;
+      const a2 = a + d.width / 2;
+      const xOuter1 = CENTER_X + RING_R * Math.cos(a1);
+      const yOuter1 = CENTER_Y + RING_R * Math.sin(a1);
+      const xOuter2 = CENTER_X + RING_R * Math.cos(a2);
+      const yOuter2 = CENTER_Y + RING_R * Math.sin(a2);
+      const xInner  = CENTER_X + (RING_R - 14) * Math.cos(a);
+      const yInner  = CENTER_Y + (RING_R - 14) * Math.sin(a);
+      // erase the ring section underneath the dip
+      const erase = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      const erasePath = `M ${xOuter1} ${yOuter1} A ${RING_R} ${RING_R} 0 0 1 ${xOuter2} ${yOuter2}`;
+      erase.setAttribute("d", erasePath);
+      erase.setAttribute("stroke", "#f5f3ee");
+      erase.setAttribute("stroke-width", "3");
+      erase.setAttribute("fill", "none");
+      dipsG.appendChild(erase);
+      // V shape (notch inward)
+      const v = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      v.setAttribute("d", `M ${xOuter1} ${yOuter1} L ${xInner} ${yInner} L ${xOuter2} ${yOuter2}`);
+      v.setAttribute("stroke", "#1a1a1a");
+      v.setAttribute("stroke-width", "1");
+      v.setAttribute("fill", "none");
+      dipsG.appendChild(v);
+    }
+  }
+
+  // ── main loop ───────────────────────────────────────────────────────
+  function loop(ts) {
+    if (!isOpen || dead) { rafId = null; return; }
+    if (!lastTs) lastTs = ts;
+    const dt = ts - lastTs;
+    lastTs = ts;
+    ringAngle += ringSpeed * dt;
+    renderLanded();
+    renderDips();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function startLoop() {
+    if (rafId) cancelAnimationFrame(rafId);
+    lastTs = 0;
+    rafId = requestAnimationFrame(loop);
+  }
+
+  // ── launch ──────────────────────────────────────────────────────────
+  function launch() {
+    if (launching || dead || !isOpen) return;
+    launching = true;
+    center.style.opacity = "0";
+
+    const word = currentWord;
+    const part = currentPart;
+
+    flying.textContent = word;
+    flying.setAttribute("opacity", "1");
+    const targetX = CENTER_X;
+    const targetY = CENTER_Y - RING_R;  // landing at top of ring
+    const flightMs = 240;
+    const startMs = performance.now();
+
+    function flightTick(now) {
+      const t = Math.min(1, (now - startMs) / flightMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const fx = CENTER_X + (targetX - CENTER_X) * eased;
+      const fy = CENTER_Y + (targetY - CENTER_Y) * eased;
+      flying.setAttribute("x", fx);
+      flying.setAttribute("y", fy);
+      if (t < 1) {
+        requestAnimationFrame(flightTick);
+      } else {
+        resolveLanding(word, part);
+      }
+    }
+    requestAnimationFrame(flightTick);
+  }
+
+  function resolveLanding(word, part) {
+    const at = whatIsAtTarget();
+    // The angular position to attach to (so it rotates with the ring)
+    const landAngle = TARGET_ANGLE - ringAngle;
+
+    if (at.type === "dip") {
+      // Quiet fall — word fades into the ring, sentence reveals
+      gentleFallIntoRing(word, () => endRun(word, part));
+      return;
+    }
+
+    if (at.type === "word" && at.tier === "full") {
+      // Both tiers occupied. Treat as if it's a dip — sentence ends.
+      // (Rare with stack cap 2, but possible.)
+      gentleFallIntoRing(word, () => endRun(word, part));
+      return;
+    }
+
+    if (at.type === "word") {
+      // Promote the existing word to tier 2; new word takes tier 1.
+      at.item.tier = 2;
+      landed.push({ word, angle: landAngle, part, tier: 1 });
+    } else {
+      // Free — land on tier 1.
+      landed.push({ word, angle: landAngle, part, tier: 1 });
+    }
+
+    score++;
+    scoreEl.textContent = score;
+    flying.setAttribute("opacity", "0");
+    slotIdx++;
+    loadNextWord();
+    center.style.opacity = "1";
+    launching = false;
+  }
+
+  // Word continues inward and fades — gentle, no crash sound
+  function gentleFallIntoRing(word, done) {
+    const startMs = performance.now();
+    const fallMs = 380;
+    const startX = parseFloat(flying.getAttribute("x"));
+    const startY = parseFloat(flying.getAttribute("y"));
+    function fallTick(now) {
+      const t = Math.min(1, (now - startMs) / fallMs);
+      const eased = t * t;
+      // travel a short way past the ring inward (~30 units)
+      const dx = (CENTER_X - startX) * 0.15;
+      const dy = (CENTER_Y - startY) * 0.15;
+      flying.setAttribute("x", startX + dx * eased);
+      flying.setAttribute("y", startY + dy * eased);
+      flying.setAttribute("opacity", String(1 - t));
+      if (t < 1) requestAnimationFrame(fallTick);
+      else done();
+    }
+    requestAnimationFrame(fallTick);
+  }
+
+  // ── end of run ──────────────────────────────────────────────────────
+  function endRun(failedWord, failedPart) {
+    dead = true;
+    launching = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+
+    // Build the sentence in reading order:
+    //   clockwise from 12 o'clock, and at each radial position, tier 1 then tier 2.
+    // Each landed word has an "angle" (its fixed position on the ring).
+    // Read clockwise: sort by angle from TARGET_ANGLE going clockwise (positive Δ).
+    const groups = new Map();  // angle → [tier1?, tier2?]
+    for (const l of landed) {
+      const key = l.angle.toFixed(3);
+      if (!groups.has(key)) groups.set(key, [null, null]);
+      const arr = groups.get(key);
+      arr[l.tier - 1] = l;
+    }
+    // turn into [{angle, words}]
+    const seq = Array.from(groups.entries()).map(([k, arr]) => {
+      const angle = parseFloat(k);
+      // delta from TARGET_ANGLE clockwise:
+      let cw = TARGET_ANGLE - angle;
+      while (cw < 0) cw += 2 * Math.PI;
+      return { angle, cw, words: arr.filter(Boolean).map(x => x.word) };
+    });
+    seq.sort((a, b) => a.cw - b.cw);
+    const flat = seq.flatMap(s => s.words);
+
+    if (flat.length === 0) {
+      overSent.textContent = "—";
+    } else {
+      overSent.textContent = flat.join(" ");
+    }
+    overMeta.textContent = `${flat.length} word${flat.length === 1 ? "" : "s"}`;
+
+    // record best (longest sentence)
+    if (flat.length > best) {
+      best = flat.length;
+      localStorage.setItem("wr-best", String(best));
+      bestEl.textContent = best;
+    }
+
+    overEl.classList.add("show");
+  }
+
+  // ── reset / open / close ────────────────────────────────────────────
+  function reset() {
+    landed = [];
+    score = 0;
+    scoreEl.textContent = "0";
+    ringAngle = 0;
+    launching = false;
+    dead = false;
+    overEl.classList.remove("show");
+    center.style.opacity = "1";
+    flying.setAttribute("opacity", "0");
+    placeDips(2);  // Level 1 — two dips
+    newTemplate();
+    loadNextWord();
+    renderLanded();
+    renderDips();
+    startLoop();
+  }
+
+  function open() {
+    if (isOpen) return;
+    isOpen = true;
+    stage.classList.add("open");
+    reset();
+  }
+  function close() {
+    if (!isOpen) return;
+    isOpen = false;
+    stage.classList.remove("open");
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    overEl.classList.remove("show");
+  }
+
+  // ── input — tap, touch, AND space key ───────────────────────────────
+  tile.addEventListener("click", open);
+
+  // The center word is the launch trigger.
+  // We bind both click (desktop) and touchstart (mobile) to avoid the
+  // 300ms tap delay and double-fire issues on iOS.
+  function launchHandler(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dead) return;
+    launch();
+  }
+  center.addEventListener("click", launchHandler);
+  center.addEventListener("touchstart", launchHandler, { passive: false });
+
+  // Spacebar launches anywhere on the page while the stage is open
+  document.addEventListener("keydown", (e) => {
+    if (!isOpen) return;
+    if (e.key === " " || e.code === "Space") {
+      e.preventDefault();
+      if (dead) return;
+      launch();
+    } else if (e.key === "Escape") {
+      close();
+    }
+  });
+
+  // Forgiving exit zone: any click farther than the game's visible footprint
+  // from the playfield center closes the stage. The "game footprint" is the
+  // ring + outer spokes (max radius ~290 in SVG units). We use 340 as the
+  // safety boundary so tier-2 words and tether lines stay safely inside.
+  // The playfield is a square wrapper, so this also catches clicks in its
+  // four corners — the dead space that wasn't part of the game anyway.
+  const SAFE_RADIUS = 340;
+
+  stage.addEventListener("click", (e) => {
+    // Ignore clicks on interactive elements (center word, restart button).
+    // Those have their own handlers and shouldn't double-fire.
+    if (e.target.closest("#wr-center, #wr-restart")) return;
+
+    // If the game-over reveal is showing, only close on truly outside clicks.
+    // The framed sentence box itself should stay clickable territory.
+    if (overEl.classList.contains("show") && overEl.contains(e.target)) return;
+
+    // Compute the click position relative to the playfield's center,
+    // in the same coordinate space the SVG uses (so SAFE_RADIUS matches).
+    const rect = svg.getBoundingClientRect();
+    const cx   = rect.left + rect.width  / 2;
+    const cy   = rect.top  + rect.height / 2;
+    // SVG viewBox is 600 wide; convert pixel distance to viewBox units.
+    const pxPerUnit = rect.width / 600;
+    const dxUnits = (e.clientX - cx) / pxPerUnit;
+    const dyUnits = (e.clientY - cy) / pxPerUnit;
+    const dist    = Math.hypot(dxUnits, dyUnits);
+
+    if (dist > SAFE_RADIUS) close();
+  });
+
+  // Scroll away closes — with debounce, so tiny scrolls don't fire
+  let scrollTimer = null;
+  window.addEventListener("scroll", () => {
+    if (!isOpen) return;
+    if (scrollTimer) clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      const rect = tile.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) close();
+    }, 80);
+  }, { passive: true });
+
+  restartBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    reset();
+  });
+
+  } // end init
+})();
+</script>

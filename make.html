@@ -1,8 +1,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
-   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 
-   <!--
+
+raw
+Make · HTML
+<!--
   Word Ring — game prototype v2.
   • Click the tile to expand the playfield.
   • Tap (or press SPACE) the word at center to launch it.
@@ -11,24 +14,215 @@
   • Hit an inward DIP on the ring → the word falls quietly into it and the
     sentence you built is revealed.
 -->
-
+ 
+<!-- ▼ next artifact <style> goes here, above ct's -->
+ 
+<style>
+  /* ─── shell, tile, and stage wrapper ───────────────────────────────────
+     Wraps the spiral tool in a click-to-expand tile so it fits cleanly
+     in a gallery alongside word-play and other artifacts. Tile preview
+     mirrors the artifact inside; stage is a focused viewport overlay. */
+ 
+  #ct-shell, #ct-shell * { box-sizing: border-box; }
+ 
+  #ct-shell {
+    position: relative;
+    width: 100%;
+    min-height: 360px;
+    font-family: 'Spectral', Georgia, serif;
+    color: #1a1a1a;
+  }
+ 
+  /* ── tile ── */
+  .ct-tile {
+    position: relative;
+    width: 220px; height: 220px;
+    margin: 60px auto;
+    border: 1px solid #9a9a9a;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px;
+    transition: transform 0.25s ease, border-color 0.25s ease;
+  }
+  .ct-tile:hover { border-color: #1a1a1a; transform: scale(1.02); }
+  .ct-tile-svg { width: 110px; height: 110px; }
+  .ct-tile-label {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #5a5a5a;
+  }
+  /* The tile's preview words — small Spectral fragments breathing in place */
+  .ct-tile-word {
+    font-family: 'Spectral', Georgia, serif;
+    font-size: 10px;
+    fill: #1a1a1a;
+  }
+  @keyframes ct-tile-breathe {
+    0%, 100% { opacity: 0.55; }
+    50%      { opacity: 1; }
+  }
+  @keyframes ct-tile-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+ 
+  /* ── stage ── */
+  .ct-stage {
+    position: fixed; inset: 0;
+    background: rgba(245, 243, 238, 0.97);
+    z-index: 9000;
+    display: none;
+    align-items: center; justify-content: center;
+  }
+  .ct-stage.open {
+    display: flex;
+    animation: ct-fadein 0.3s ease forwards;
+  }
+  @keyframes ct-fadein { from { opacity: 0; } to { opacity: 1; } }
+ 
+  /* Small dismiss hint on the stage */
+  .ct-hint {
+    position: fixed;
+    bottom: 16px; left: 50%;
+    transform: translateX(-50%);
+    font-family: ui-monospace, monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #9a9a9a;
+    pointer-events: none;
+    user-select: none;
+    z-index: 9001;
+  }
+</style>
+ 
+<style>
+  /* Scoped variables so this widget works alongside your gallery without
+     depending on any external visual system tokens. Tweak these to taste. */
+  #ct-root {
+    --ct-text:      #1a1a1a;
+    --ct-text-2:    #5a5a5a;
+    --ct-text-3:    #9a9a9a;
+    --ct-border:    rgba(0,0,0,0.16);
+    --ct-border-2:  rgba(0,0,0,0.08);
+    --ct-mono:      ui-monospace, "SF Mono", Menlo, monospace;
+    --ct-serif:     'Spectral', Georgia, serif;
+    --ct-radius-sm: 6px;
+ 
+    position: relative;
+    width: min(900px, 92vw);
+    height: min(760px, 90vh);
+    max-width: 900px;
+    max-height: 760px;
+    overflow: hidden;
+    cursor: text;
+    font-family: var(--ct-serif);
+  }
+  #ct-svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+  }
+  #ct-in {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(48%, 380px);
+    background: transparent;
+    border: none; outline: none;
+    text-align: center;
+    font-family: var(--ct-serif);
+    font-size: clamp(1.5rem, 3.2vw, 2rem);
+    color: var(--ct-text);
+    caret-color: var(--ct-text);
+    padding: 0.5rem 0.8rem;
+    z-index: 10;
+  }
+  #ct-in::placeholder {
+    color: var(--ct-text-3);
+    opacity: 0.6;
+    font-style: italic;
+  }
+  @keyframes ct-launch {
+    0%   { opacity: 1; transform: translate(-50%,-50%) scale(1); filter: blur(0); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1.6); filter: blur(3px); }
+  }
+  .ct-launch {
+    position: absolute; left: 50%; top: 50%;
+    font-family: var(--ct-serif);
+    font-size: clamp(1.5rem, 3.2vw, 2rem);
+    color: var(--ct-text);
+    z-index: 11; pointer-events: none; white-space: nowrap;
+    animation: ct-launch 0.8s cubic-bezier(.4,0,.6,1) forwards;
+  }
+  #ct-modes {
+    position: absolute; right: 22px; bottom: 84px;
+    display: flex; gap: 6px; z-index: 16;
+  }
+  .ct-mode {
+    display: flex; align-items: center; gap: 5px;
+    background: transparent;
+    border: 1px solid var(--ct-border);
+    border-radius: var(--ct-radius-sm);
+    color: var(--ct-text-2);
+    font-family: var(--ct-mono); font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 7px 11px; cursor: pointer;
+    transition: color .15s, border-color .15s, opacity .15s, background .15s;
+  }
+  .ct-mode:disabled { opacity: 0.35; cursor: default; }
+  .ct-mode:not(:disabled):hover {
+    color: var(--ct-text);
+    border-color: var(--ct-text-2);
+  }
+  .ct-mode.on {
+    color: var(--ct-text);
+    border-color: var(--ct-text);
+  }
+  .ct-mode-icon { font-size: 12px; line-height: 1; }
+  #ct-readout {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: transparent;
+    border-top: 1px solid var(--ct-border);
+    padding: 14px 22px 16px;
+    z-index: 15;
+  }
+  #ct-readout-label {
+    font-family: var(--ct-mono); font-size: 9px;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ct-text-3); margin-bottom: 6px;
+  }
+  #ct-readout-text {
+    font-family: var(--ct-serif);
+    font-size: 1.3rem; line-height: 1.45;
+    color: var(--ct-text);
+    min-height: 1.45em;
+  }
+  #ct-readout-text .ct-empty {
+    color: var(--ct-text-3); font-style: italic;
+  }
+</style>
+ 
 <style>
   #wr-root, #wr-root * { box-sizing: border-box; }
-
+ 
   #wr-root {
     --wr-ink:    #1a1a1a;
     --wr-ink-2:  #5a5a5a;
     --wr-ink-3:  #9a9a9a;
     --wr-mono:   ui-monospace, "SF Mono", Menlo, monospace;
     --wr-serif:  'Spectral', Georgia, serif;
-
+ 
     position: relative;
     width: 100%;
     min-height: 360px;
     font-family: var(--wr-mono);
     color: var(--wr-ink);
   }
-
+ 
   /* ── collapsed tile ───────────────────────────────────────────────── */
   .wr-tile {
     position: relative;
@@ -51,7 +245,7 @@
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
   }
-
+ 
   /* ── expanded stage ───────────────────────────────────────────────── */
   .wr-stage {
     position: fixed; inset: 0;
@@ -65,7 +259,7 @@
     animation: wr-fadein 0.3s ease forwards;
   }
   @keyframes wr-fadein { from { opacity: 0; } to { opacity: 1; } }
-
+ 
   .wr-playfield {
     position: relative;
     width: min(680px, 90vw);
@@ -77,7 +271,7 @@
     width: 100%; height: 100%;
     touch-action: manipulation;  /* prevent double-tap zoom on mobile */
   }
-
+ 
   /* HUD */
   .wr-hud {
     position: absolute;
@@ -96,7 +290,7 @@
     text-transform: uppercase; color: var(--wr-ink-3);
     pointer-events: none; user-select: none;
   }
-
+ 
   /* End-of-run reveal */
   .wr-over {
     position: absolute; inset: 0;
@@ -108,7 +302,7 @@
     padding: 40px;
   }
   .wr-over.show { display: flex; pointer-events: auto; }
-
+ 
   /* the framed sentence — it IS the reward */
   .wr-frame {
     border: 1px solid var(--wr-ink);
@@ -146,7 +340,7 @@
     color: #f5f3ee;
   }
 </style>
-
+ 
 <div id="wr-root">
   <!-- collapsed tile -->
   <div class="wr-tile" id="wr-tile">
@@ -160,7 +354,7 @@
     </svg>
     <div class="wr-tile-label">word-play</div>
   </div>
-
+ 
   <!-- expanded stage -->
   <div class="wr-stage" id="wr-stage">
     <div class="wr-playfield" id="wr-playfield">
@@ -168,31 +362,31 @@
         <span><span id="wr-score">0</span> words</span>
         <span class="wr-best">longest · <span id="wr-best">0</span></span>
       </div>
-
+ 
       <svg class="wr-svg" id="wr-svg" viewBox="0 0 600 600">
         <!-- guide ring -->
         <circle id="wr-ring" cx="300" cy="300" r="180"
                 fill="none" stroke="#1a1a1a" stroke-width="1.2" />
-
+ 
         <!-- target tick at 12 o'clock -->
         <g id="wr-target">
           <line x1="300" y1="105" x2="300" y2="120" stroke="#1a1a1a" stroke-width="1" />
           <line x1="290" y1="112" x2="310" y2="112" stroke="#1a1a1a" stroke-width="1" />
         </g>
-
+ 
         <!-- dips (negative space cut into the ring, render-time) -->
         <g id="wr-dips"></g>
-
+ 
         <!-- spokes & landed words -->
         <g id="wr-spokes"></g>
-
+ 
         <!-- flying word during launch -->
         <text id="wr-flying"
               x="300" y="300"
               text-anchor="middle" dominant-baseline="central"
               font-family="ui-monospace, monospace" font-size="22"
               fill="#1a1a1a" opacity="0"></text>
-
+ 
         <!-- center word, clickable -->
         <g id="wr-center" style="cursor: pointer;">
           <!-- invisible larger hit area for easier tapping on mobile -->
@@ -204,9 +398,9 @@
                 fill="#1a1a1a"></text>
         </g>
       </svg>
-
+ 
       <div class="wr-hint">tap / space-bar — play · click outside to go</div>
-
+ 
       <div class="wr-over" id="wr-over">
         <div class="wr-frame">
           <div class="wr-over-sentence" id="wr-over-sentence"></div>
@@ -217,7 +411,461 @@
     </div>
   </div>
 </div>
-
+ 
+<div id="ct-shell">
+  <!-- collapsed tile -->
+  <div class="ct-tile" id="ct-tile">
+    <svg class="ct-tile-svg" viewBox="0 0 100 100">
+      <g style="transform-origin: 50px 50px; animation: ct-tile-spin 30s linear infinite;">
+        <!-- guide circle -->
+        <circle cx="50" cy="50" r="36" fill="none" stroke="#1a1a1a" stroke-width="0.7" opacity="0.5"/>
+        <!-- text running along the circle -->
+        <defs>
+          <path id="ct-tile-path" d="M 50 14 a 36 36 0 1 1 -0.01 0" fill="none"/>
+        </defs>
+        <text font-family="'Spectral', Georgia, serif"
+              font-size="9.5"
+              letter-spacing="1.5"
+              fill="#1a1a1a">
+          <textPath href="#ct-tile-path" startOffset="0">
+            thoughts need space · thoughts need space ·
+          </textPath>
+        </text>
+      </g>
+    </svg>
+    <div class="ct-tile-label">circle</div>
+  </div>
+ 
+  <!-- expanded stage -->
+  <div class="ct-stage" id="ct-stage">
+    <div id="ct-root">
+  <svg id="ct-svg" viewBox="0 0 1000 760" preserveAspectRatio="xMidYMid meet">
+    <!-- guide circle -->
+    <circle id="ct-circle" cx="500" cy="380" r="270" fill="none"
+            stroke="currentColor" stroke-width="0.8" stroke-opacity="0.16" />
+ 
+    <!-- words get injected here by JS -->
+    <g id="ct-words"></g>
+  </svg>
+ 
+  <input id="ct-in" type="text" autocomplete="off" spellcheck="false" />
+ 
+  <div id="ct-modes">
+    <button class="ct-mode" data-mode="reverse" disabled>
+      <span class="ct-mode-icon">↺</span> reverse
+    </button>
+    <button class="ct-mode" data-mode="shuffle" disabled>
+      <span class="ct-mode-icon">⤨</span> shuffle
+    </button>
+    <button class="ct-mode" data-mode="sort" disabled>
+      <span class="ct-mode-icon">⇕</span> sort
+    </button>
+  </div>
+ 
+  <div id="ct-readout">
+    <div id="ct-readout-label">Reading order — clockwise from top</div>
+    <div id="ct-readout-text">
+      <span class="ct-empty">your sentence will appear here</span>
+    </div>
+  </div>
+</div>
+    <div class="ct-hint">click outside to leave · esc</div>
+  </div>
+</div>
+ 
+<!-- ▼ next artifact tile + stage goes here, below ct's -->
+ 
+ 
+<!-- ▼ next artifact <script> goes here, above ct's -->
+<script>
+// Safe to place this <script> anywhere — defers to DOMContentLoaded if
+// the artifact markup isn't in the DOM yet.
+(function () {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+ 
+  function init() {
+  // ── geometry ──────────────────────────────────────────────────────────
+  const CX = 500, CY = 380, RADIUS = 270;
+  const BASE_FONT = 34;
+  const ANIM_MS   = 1900;
+  const LAUNCH_MS = 800;
+  const SVG_NS    = "http://www.w3.org/2000/svg";
+ 
+  // Pulse: ~one breath every 5.5s. Phase-offset per word so the field
+  // undulates rather than blinks in unison. Amplitudes are deliberately
+  // small — the layout reads as alive without anything actually moving
+  // off its angular slot, so word #1 stays anchored at 12 o'clock.
+  const PULSE_HZ        = 1 / 5.5;
+  const RADIUS_PULSE    = 4;          // px, in-and-out along the radial
+  const OPACITY_PULSE   = 0.12;       // ±, oscillates around 1
+  const CIRCLE_PULSE    = 0.07;       // guide-circle stroke opacity swing
+ 
+  // word index i with N total → angle, with word 0 anchored at 12 o'clock
+  function naturalAngle(i, n) {
+    return -Math.PI / 2 + (i / Math.max(1, n)) * 2 * Math.PI;
+  }
+ 
+  // ── state ─────────────────────────────────────────────────────────────
+  let words      = [];
+  let nextId     = 0;
+  let launchId   = null;
+  let launchTimer = null;
+  let playing    = null;     // null | "reverse" | "shuffle" | "sort"
+  let animAngles = null;
+  let currentAnim = null;
+ 
+  // Pulse clock — references inside the render loop so attributes update
+  // without rebuilding any DOM.
+  const t0 = performance.now();
+ 
+  // ── DOM refs ──────────────────────────────────────────────────────────
+  const root        = document.getElementById("ct-root");
+  const input       = document.getElementById("ct-in");
+  const wordsGroup  = document.getElementById("ct-words");
+  const modeButtons = Array.from(document.querySelectorAll(".ct-mode"));
+  const readoutText = document.getElementById("ct-readout-text");
+ 
+  // ── render ────────────────────────────────────────────────────────────
+  // Rebuilds the SVG nodes only when word set / play state changes.
+  // The pulse loop below mutates attributes on these nodes in place, so
+  // continuous animation never thrashes the DOM.
+  // wordNodes maps id → { word: <text>, label: <text>, angle: number, isLaunching: bool }
+  const wordNodes = new Map();
+  const guideCircle = document.getElementById("ct-circle");
+ 
+  function render() {
+    const N = words.length;
+ 
+    // Remove nodes for words that no longer exist
+    for (const [id, nodes] of wordNodes) {
+      if (!words.find(w => w.id === id)) {
+        nodes.word.remove();
+        if (nodes.label) nodes.label.remove();
+        wordNodes.delete(id);
+      }
+    }
+ 
+    words.forEach((w, i) => {
+      const ang = (playing && animAngles) ? animAngles[i] : naturalAngle(i, N);
+      const isLaunching = launchId === w.id;
+      const isFirst = i === 0;
+ 
+      let entry = wordNodes.get(w.id);
+      if (!entry) {
+        const text = document.createElementNS(SVG_NS, "text");
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "central");
+        text.setAttribute("font-family", "Spectral, Georgia, serif");
+        text.setAttribute("font-size", BASE_FONT);
+        text.setAttribute("fill", "currentColor");
+        text.style.transition = "font-weight 0.3s ease";
+        text.textContent = w.text;
+        wordsGroup.appendChild(text);
+ 
+        const lbl = document.createElementNS(SVG_NS, "text");
+        lbl.setAttribute("text-anchor", "middle");
+        lbl.setAttribute("dominant-baseline", "central");
+        lbl.setAttribute("font-family", "ui-monospace, monospace");
+        lbl.setAttribute("font-size", "10");
+        lbl.setAttribute("fill", "#9a9a9a");
+        lbl.style.pointerEvents = "none";
+        wordsGroup.appendChild(lbl);
+ 
+        entry = { word: text, label: lbl };
+        wordNodes.set(w.id, entry);
+      }
+ 
+      entry.angle       = ang;
+      entry.index       = i;
+      entry.isLaunching = isLaunching;
+      entry.word.setAttribute("font-weight", isFirst ? 500 : 400);
+      entry.label.textContent = i + 1;
+      entry.label.setAttribute("opacity", isLaunching ? 0 : 0.55);
+    });
+ 
+    // mode buttons enabled state + active highlight
+    modeButtons.forEach(btn => {
+      btn.disabled = words.length < 2;
+      btn.classList.toggle("on", playing === btn.dataset.mode);
+    });
+ 
+    // readout (flat sentence in reading order)
+    if (words.length === 0) {
+      readoutText.innerHTML = '<span class="ct-empty">your sentence will appear here</span>';
+    } else {
+      readoutText.textContent = words.map(w => w.text).join(" ");
+    }
+  }
+ 
+  // ── pulse loop ────────────────────────────────────────────────────────
+  // Runs every frame. Updates x/y/opacity on existing nodes; never touches
+  // the DOM tree. Three layered motions, each phase-offset per word so the
+  // field feels organic rather than synchronised:
+  //   1. Radial bob — each word drifts in and out 4px along its own radial
+  //   2. Opacity breath — ±12% around full opacity
+  //   3. Guide-circle heartbeat — stroke opacity swings ±7%
+  function pulseTick(now) {
+    const s = (now - t0) / 1000;
+    const N = words.length;
+ 
+    // Guide circle heartbeat
+    const heart = 0.16 + Math.sin(s * PULSE_HZ * 2 * Math.PI) * CIRCLE_PULSE;
+    guideCircle.setAttribute("stroke-opacity", heart.toFixed(3));
+ 
+    // Per-word pulse
+    let i = 0;
+    for (const [, entry] of wordNodes) {
+      const phase    = i * 0.8;
+      const breathe  = Math.sin(s * PULSE_HZ * 2 * Math.PI + phase);
+      const radius   = RADIUS + breathe * RADIUS_PULSE;
+      const x  = CX + radius * Math.cos(entry.angle);
+      const y  = CY + radius * Math.sin(entry.angle);
+      const lx = CX + (radius + 28) * Math.cos(entry.angle);
+      const ly = CY + (radius + 28) * Math.sin(entry.angle);
+      const op = entry.isLaunching ? 0 : 1 + breathe * OPACITY_PULSE;
+ 
+      entry.word.setAttribute("x", x.toFixed(1));
+      entry.word.setAttribute("y", y.toFixed(1));
+      entry.word.setAttribute("opacity", op.toFixed(3));
+      entry.label.setAttribute("x", lx.toFixed(1));
+      entry.label.setAttribute("y", ly.toFixed(1));
+      i++;
+    }
+    requestAnimationFrame(pulseTick);
+  }
+  requestAnimationFrame(pulseTick);
+ 
+  // ── launch echo (the fade-up element shown above the input) ───────────
+  function showLaunch(text) {
+    const node = document.createElement("div");
+    node.className = "ct-launch";
+    node.textContent = text;
+    root.appendChild(node);
+    setTimeout(() => node.remove(), LAUNCH_MS + 50);
+  }
+ 
+  // ── typing ────────────────────────────────────────────────────────────
+  function sendWord(text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const id = nextId++;
+    words.push({ id, text: trimmed });
+    launchId = id;
+    showLaunch(trimmed);
+    input.value = "";
+    if (launchTimer) clearTimeout(launchTimer);
+    launchTimer = setTimeout(() => {
+      if (launchId === id) {
+        launchId = null;
+        render();
+      }
+    }, LAUNCH_MS);
+    render();
+  }
+ 
+  // Composition flag — true while IME is composing (Japanese, Chinese, etc).
+  // Without this, the space-to-launch trigger can fire during composition.
+  let composing = false;
+  input.addEventListener("compositionstart", () => { composing = true; });
+  input.addEventListener("compositionend",   () => { composing = false; });
+ 
+  input.addEventListener("input", (e) => {
+    if (composing) return;
+    const v = e.target.value;
+    if (v.endsWith(" ")) sendWord(v.slice(0, -1));
+  });
+ 
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" && input.value === "" && words.length > 0) {
+      e.preventDefault();
+      const last = words.pop();
+      input.value = last.text;
+      render();
+    }
+  });
+ 
+  root.addEventListener("click", (e) => {
+    if (e.target.tagName !== "BUTTON") input.focus();
+  });
+ 
+  // ── play: animate from current order to a target order ───────────────
+  // Each mode produces a different target permutation, but uses the same
+  // collapse animation (shortest-arc rotation, cubic ease in/out).
+  // playing is now a string ("reverse" | "shuffle" | "sort") or null.
+ 
+  function computeTarget(mode) {
+    const N = words.length;
+    if (mode === "reverse") {
+      return words.slice().reverse();
+    }
+    if (mode === "shuffle") {
+      // Fisher-Yates, guaranteed to differ from current if N >= 2
+      let next;
+      let attempts = 0;
+      do {
+        next = words.slice();
+        for (let i = N - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [next[i], next[j]] = [next[j], next[i]];
+        }
+        attempts++;
+      } while (attempts < 8 && next.every((w, i) => w.id === words[i].id));
+      return next;
+    }
+    if (mode === "sort") {
+      // Alphabetical by lowercased text
+      return words.slice().sort((a, b) =>
+        a.text.toLowerCase().localeCompare(b.text.toLowerCase())
+      );
+    }
+    return words.slice();
+  }
+ 
+  function play(mode) {
+    if (words.length < 2 || playing) return;
+    playing = mode;
+ 
+    const N = words.length;
+    const target = computeTarget(mode);
+    const source = words.map((_, i) => naturalAngle(i, N));
+    // For each *current* word, where in the target list does it land?
+    const dest = words.map(w => {
+      const targetIdx = target.findIndex(t => t.id === w.id);
+      return naturalAngle(targetIdx, N);
+    });
+    const start  = performance.now();
+    const run = { done: false, raf: null, safety: null };
+    currentAnim = run;
+ 
+    function finish() {
+      if (run.done) return;
+      run.done = true;
+      if (run.raf)    cancelAnimationFrame(run.raf);
+      if (run.safety) clearTimeout(run.safety);
+      words = target;
+      animAngles = null;
+      playing = null;
+      currentAnim = null;
+      render();
+    }
+ 
+    function tick(now) {
+      if (run.done || currentAnim !== run) return;
+      const t = Math.min(1, (now - start) / ANIM_MS);
+      const eased = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+      animAngles = source.map((s, i) => {
+        let delta = dest[i] - s;
+        if (delta >  Math.PI) delta -= 2 * Math.PI;
+        if (delta < -Math.PI) delta += 2 * Math.PI;
+        return s + delta * eased;
+      });
+      render();
+      if (t < 1) run.raf = requestAnimationFrame(tick);
+      else finish();
+    }
+ 
+    run.raf    = requestAnimationFrame(tick);
+    run.safety = setTimeout(finish, ANIM_MS + 250);
+    render();
+  }
+ 
+  modeButtons.forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      play(btn.dataset.mode);
+      input.focus();
+    });
+  });
+ 
+  // ── initial paint ─────────────────────────────────────────────────────
+  // Note: we deliberately do NOT call input.focus() here. If the widget
+  // sits below the fold, auto-focusing would scroll the page to it on load.
+  // The input still focuses on any click within the widget.
+  render();
+ 
+  // ── tile-and-stage open/close ─────────────────────────────────────────
+  // Mirrors the word-play pattern: a small tile sits in the gallery; click
+  // it to expand into a focused stage. Loose dismissal — click anywhere
+  // outside the playfield, press Escape, or scroll away from the tile.
+  const tile  = document.getElementById("ct-tile");
+  const stage = document.getElementById("ct-stage");
+  const playfield = document.getElementById("ct-root");
+  let stageOpen = false;
+ 
+  function openStage() {
+    if (stageOpen) return;
+    stageOpen = true;
+    stage.classList.add("open");
+    // Focus quickly so the blinking caret appears almost immediately —
+    // the caret is the user's invitation to type once "type" is gone.
+    setTimeout(() => input.focus(), 50);
+  }
+ 
+  function closeStage() {
+    if (!stageOpen) return;
+    stageOpen = false;
+    stage.classList.remove("open");
+    input.blur();
+  }
+ 
+  tile.addEventListener("click", openStage);
+ 
+  // Forgiving exit zone — match word-play's pattern.
+  // The circle tool's SVG uses viewBox 1000×760 with the circle at center
+  // (500, 380) and radius 270. Visible content (numbered labels, breathing
+  // pulse) extends to ~298. SAFE_RADIUS of 350 mirrors word-play's ratio
+  // of safe-radius to game-extent. Clicks beyond this radius from center
+  // close the stage; everything inside is protected.
+  //
+  // Interactive widgets (input, mode buttons, readout) live outside the
+  // circle's radius but should NOT trigger close — they're handled via
+  // e.target.closest() before the geometric check runs.
+  const SAFE_RADIUS_CT = 350;
+ 
+  stage.addEventListener("click", (e) => {
+    // Interactive elements always pass through, regardless of position.
+    if (e.target.closest("#ct-in, #ct-modes, .ct-mode, #ct-readout")) return;
+ 
+    // Compute click position relative to the SVG's center in viewBox units.
+    const svgEl = document.getElementById("ct-svg");
+    if (!svgEl) return;
+    const rect  = svgEl.getBoundingClientRect();
+    const cx    = rect.left + rect.width  / 2;
+    const cy    = rect.top  + rect.height / 2;
+    // viewBox is 1000 wide → translate pixel distance into viewBox units.
+    const pxPerUnit = rect.width / 1000;
+    const dx = (e.clientX - cx) / pxPerUnit;
+    const dy = (e.clientY - cy) / pxPerUnit;
+    const dist = Math.hypot(dx, dy);
+ 
+    if (dist > SAFE_RADIUS_CT) closeStage();
+  });
+ 
+  // Escape key → close
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && stageOpen) closeStage();
+  });
+ 
+  // Scroll away from the tile's section → close (debounced)
+  let ctScrollTimer = null;
+  window.addEventListener("scroll", () => {
+    if (!stageOpen) return;
+    if (ctScrollTimer) clearTimeout(ctScrollTimer);
+    ctScrollTimer = setTimeout(() => {
+      const rect = tile.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) closeStage();
+    }, 80);
+  }, { passive: true });
+ 
+  } // end init
+})();
+</script>
+ 
+ 
 <script>
 (function () {
   if (document.readyState === "loading") {
@@ -225,16 +873,16 @@
   } else {
     init();
   }
-
+ 
   function init() {
-
+ 
   // ── word pool — expanded but curated for literary tone ──────────────
   // The pool is the game's voice. Kept mostly 1–2 syllable, common,
   // and visually short. Sized to give thousands of combinations without
   // bloating the bundle. Easy to extend later.
   const WORDS = {
     article:     ["the", "a"],
-
+ 
     subject:     ["bird", "cat", "fox", "moon", "child", "river", "ghost",
                   "wolf", "stranger", "doctor", "tree", "wind", "sailor",
                   "ocean", "thief", "lamp", "house", "stone", "fire",
@@ -245,7 +893,7 @@
                   "mountain", "valley", "harbor", "lighthouse", "bell",
                   "clock", "mirror", "door", "window", "garden", "rose",
                   "tide", "storm", "thunder", "dawn", "dusk"],
-
+ 
     verb:        ["flies", "sleeps", "runs", "watches", "dreams", "sings",
                   "writes", "waits", "burns", "follows", "remembers",
                   "finds", "loses", "carries", "breaks", "holds", "spins",
@@ -255,7 +903,7 @@
                   "listens", "speaks", "answers", "asks", "knows", "forgets",
                   "trembles", "shines", "fades", "circles", "gathers",
                   "scatters", "lights", "darkens"],
-
+ 
     adjective:   ["quiet", "small", "ancient", "warm", "lonely", "bright",
                   "wild", "broken", "strange", "soft", "blue", "empty",
                   "heavy", "tender", "swift", "narrow", "patient",
@@ -264,7 +912,7 @@
                   "fragile", "stubborn", "honest", "uncertain", "fearless",
                   "sacred", "humble", "rough", "smooth", "sharp", "dull",
                   "cold", "frozen", "dim", "vast", "thin", "deep"],
-
+ 
     object:      ["bread", "song", "letter", "stone", "key", "thread",
                   "name", "fire", "promise", "garden", "window", "story",
                   "silence", "answer", "map", "candle", "feather",
@@ -273,11 +921,11 @@
                   "minute", "voice", "echo", "shadow", "ghost", "light",
                   "dark", "rain", "leaf", "branch", "root", "salt",
                   "honey", "wine", "blade", "thread", "needle", "sail"],
-
+ 
     preposition: ["in", "through", "beyond", "near", "under", "across",
                   "between", "behind", "before", "beside", "within",
                   "without", "against", "toward"],
-
+ 
     place:       ["forest", "river", "city", "darkness", "morning", "snow",
                   "doorway", "field", "harbor", "kitchen", "valley",
                   "rain", "summer", "winter", "spring", "autumn", "twilight",
@@ -286,7 +934,7 @@
                   "basement", "tower", "meadow", "orchard", "vineyard",
                   "marsh", "cave", "tunnel", "stairwell"],
   };
-
+ 
   // ── templates — what kind of sentences we build ─────────────────────
   // The game cycles these as the player completes them. Each adds slight
   // variation in cadence so the emerging sentences feel different.
@@ -299,7 +947,7 @@
     ["subject", "verb", "article", "adjective", "object"],
     ["preposition", "place", "article", "subject", "verb"],
   ];
-
+ 
   // ── geometry ────────────────────────────────────────────────────────
   const CENTER_X = 300;
   const CENTER_Y = 300;
@@ -307,9 +955,9 @@
   const TIER_1_R = 220;   // inner stack (closer to ring)
   const TIER_2_R = 270;   // outer stack (pushed out)
   const TARGET_ANGLE = -Math.PI / 2;  // 12 o'clock, screen coords
-
+ 
   const DIP_WIDTH = 0.14; // ~8° per dip — small enough to dodge, threatening enough
-
+ 
   // ── DOM refs ────────────────────────────────────────────────────────
   const tile      = document.getElementById("wr-tile");
   const stage     = document.getElementById("wr-stage");
@@ -326,7 +974,7 @@
   const overSent  = document.getElementById("wr-over-sentence");
   const overMeta  = document.getElementById("wr-over-meta");
   const restartBtn= document.getElementById("wr-restart");
-
+ 
   // ── state ───────────────────────────────────────────────────────────
   let isOpen   = false;
   let ringAngle = 0;
@@ -345,19 +993,19 @@
   let dead     = false;
   let rafId    = null;
   let lastTs   = 0;
-
+ 
   bestEl.textContent = best;
-
+ 
   // ── helpers ─────────────────────────────────────────────────────────
   const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
+ 
   function pickWord(part) { return rand(WORDS[part] || WORDS.subject); }
-
+ 
   function newTemplate() {
     template = rand(TEMPLATES);
     slotIdx = 0;
   }
-
+ 
   function loadNextWord() {
     if (slotIdx >= template.length) {
       score += 3;  // small completion bonus
@@ -367,7 +1015,7 @@
     currentWord = pickWord(currentPart);
     current.textContent = currentWord;
   }
-
+ 
   // Normalize a signed angle delta to (-π, π]
   function angDelta(a, b) {
     let d = a - b;
@@ -375,7 +1023,7 @@
     while (d < -Math.PI) d += 2 * Math.PI;
     return d;
   }
-
+ 
   // Pick a random angle that doesn't conflict with existing dips/words.
   function freshAngle(forbidWidth) {
     for (let i = 0; i < 40; i++) {
@@ -392,7 +1040,7 @@
     }
     return Math.random() * 2 * Math.PI;  // fall back to anywhere
   }
-
+ 
   // Pre-place dips at game start (Level 1: 2 dips).
   function placeDips(n) {
     dips = [];
@@ -400,7 +1048,7 @@
       dips.push({ angle: freshAngle(DIP_WIDTH * 2), width: DIP_WIDTH });
     }
   }
-
+ 
   // What's at the target right now? Returns:
   //   { type: "dip" } if a dip is overhead
   //   { type: "word", item, tier: 1|2|"full" } if a word stack is there
@@ -410,7 +1058,7 @@
     // Each item's "screen angle" = item.angle + ringAngle.
     // Find anything whose screen angle is within ~0.1 rad of target.
     const HIT = 0.09;  // collision radius in radians
-
+ 
     for (const d of dips) {
       if (Math.abs(angDelta(d.angle + ringAngle, TARGET_ANGLE)) < (HIT + d.width / 2)) {
         return { type: "dip" };
@@ -429,7 +1077,7 @@
     // there's just one word here, on tier 1 (the normal case)
     return { type: "word", tier: 1, item: hits[0] };
   }
-
+ 
   // ── render ──────────────────────────────────────────────────────────
   function renderLanded() {
     while (spokesG.firstChild) spokesG.removeChild(spokesG.firstChild);
@@ -441,7 +1089,7 @@
       const y1 = CENTER_Y + innerR * Math.sin(a);
       const x2 = CENTER_X + outerR * Math.cos(a);
       const y2 = CENTER_Y + outerR * Math.sin(a);
-
+ 
       // tether line
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
       line.setAttribute("x1", x1); line.setAttribute("y1", y1);
@@ -449,7 +1097,7 @@
       line.setAttribute("stroke", "#1a1a1a");
       line.setAttribute("stroke-width", item.tier === 1 ? "1" : "0.7");
       spokesG.appendChild(line);
-
+ 
       // word slightly beyond the tether end
       const labelR = outerR + 20;
       const wx = CENTER_X + labelR * Math.cos(a);
@@ -466,7 +1114,7 @@
       spokesG.appendChild(t);
     }
   }
-
+ 
   function renderDips() {
     while (dipsG.firstChild) dipsG.removeChild(dipsG.firstChild);
     for (const d of dips) {
@@ -497,7 +1145,7 @@
       dipsG.appendChild(v);
     }
   }
-
+ 
   // ── main loop ───────────────────────────────────────────────────────
   function loop(ts) {
     if (!isOpen || dead) { rafId = null; return; }
@@ -509,29 +1157,29 @@
     renderDips();
     rafId = requestAnimationFrame(loop);
   }
-
+ 
   function startLoop() {
     if (rafId) cancelAnimationFrame(rafId);
     lastTs = 0;
     rafId = requestAnimationFrame(loop);
   }
-
+ 
   // ── launch ──────────────────────────────────────────────────────────
   function launch() {
     if (launching || dead || !isOpen) return;
     launching = true;
     center.style.opacity = "0";
-
+ 
     const word = currentWord;
     const part = currentPart;
-
+ 
     flying.textContent = word;
     flying.setAttribute("opacity", "1");
     const targetX = CENTER_X;
     const targetY = CENTER_Y - RING_R;  // landing at top of ring
     const flightMs = 240;
     const startMs = performance.now();
-
+ 
     function flightTick(now) {
       const t = Math.min(1, (now - startMs) / flightMs);
       const eased = 1 - Math.pow(1 - t, 3);
@@ -547,25 +1195,25 @@
     }
     requestAnimationFrame(flightTick);
   }
-
+ 
   function resolveLanding(word, part) {
     const at = whatIsAtTarget();
     // The angular position to attach to (so it rotates with the ring)
     const landAngle = TARGET_ANGLE - ringAngle;
-
+ 
     if (at.type === "dip") {
       // Quiet fall — word fades into the ring, sentence reveals
       gentleFallIntoRing(word, () => endRun(word, part));
       return;
     }
-
+ 
     if (at.type === "word" && at.tier === "full") {
       // Both tiers occupied. Treat as if it's a dip — sentence ends.
       // (Rare with stack cap 2, but possible.)
       gentleFallIntoRing(word, () => endRun(word, part));
       return;
     }
-
+ 
     if (at.type === "word") {
       // Promote the existing word to tier 2; new word takes tier 1.
       at.item.tier = 2;
@@ -574,7 +1222,7 @@
       // Free — land on tier 1.
       landed.push({ word, angle: landAngle, part, tier: 1 });
     }
-
+ 
     score++;
     scoreEl.textContent = score;
     flying.setAttribute("opacity", "0");
@@ -583,7 +1231,7 @@
     center.style.opacity = "1";
     launching = false;
   }
-
+ 
   // Word continues inward and fades — gentle, no crash sound
   function gentleFallIntoRing(word, done) {
     const startMs = performance.now();
@@ -604,14 +1252,14 @@
     }
     requestAnimationFrame(fallTick);
   }
-
+ 
   // ── end of run ──────────────────────────────────────────────────────
   function endRun(failedWord, failedPart) {
     dead = true;
     launching = false;
     if (rafId) cancelAnimationFrame(rafId);
     rafId = null;
-
+ 
     // Build the sentence in reading order:
     //   clockwise from 12 o'clock, and at each radial position, tier 1 then tier 2.
     // Each landed word has an "angle" (its fixed position on the ring).
@@ -633,24 +1281,24 @@
     });
     seq.sort((a, b) => a.cw - b.cw);
     const flat = seq.flatMap(s => s.words);
-
+ 
     if (flat.length === 0) {
       overSent.textContent = "—";
     } else {
       overSent.textContent = flat.join(" ");
     }
     overMeta.textContent = `${flat.length} word${flat.length === 1 ? "" : "s"}`;
-
+ 
     // record best (longest sentence)
     if (flat.length > best) {
       best = flat.length;
       localStorage.setItem("wr-best", String(best));
       bestEl.textContent = best;
     }
-
+ 
     overEl.classList.add("show");
   }
-
+ 
   // ── reset / open / close ────────────────────────────────────────────
   function reset() {
     landed = [];
@@ -669,7 +1317,7 @@
     renderDips();
     startLoop();
   }
-
+ 
   function open() {
     if (isOpen) return;
     isOpen = true;
@@ -684,10 +1332,10 @@
     rafId = null;
     overEl.classList.remove("show");
   }
-
+ 
   // ── input — tap, touch, AND space key ───────────────────────────────
   tile.addEventListener("click", open);
-
+ 
   // The center word is the launch trigger.
   // We bind both click (desktop) and touchstart (mobile) to avoid the
   // 300ms tap delay and double-fire issues on iOS.
@@ -699,7 +1347,7 @@
   }
   center.addEventListener("click", launchHandler);
   center.addEventListener("touchstart", launchHandler, { passive: false });
-
+ 
   // Spacebar launches anywhere on the page while the stage is open
   document.addEventListener("keydown", (e) => {
     if (!isOpen) return;
@@ -711,7 +1359,7 @@
       close();
     }
   });
-
+ 
   // Forgiving exit zone: any click farther than the game's visible footprint
   // from the playfield center closes the stage. The "game footprint" is the
   // ring + outer spokes (max radius ~290 in SVG units). We use 340 as the
@@ -719,16 +1367,16 @@
   // The playfield is a square wrapper, so this also catches clicks in its
   // four corners — the dead space that wasn't part of the game anyway.
   const SAFE_RADIUS = 340;
-
+ 
   stage.addEventListener("click", (e) => {
     // Ignore clicks on interactive elements (center word, restart button).
     // Those have their own handlers and shouldn't double-fire.
     if (e.target.closest("#wr-center, #wr-restart")) return;
-
+ 
     // If the game-over reveal is showing, only close on truly outside clicks.
     // The framed sentence box itself should stay clickable territory.
     if (overEl.classList.contains("show") && overEl.contains(e.target)) return;
-
+ 
     // Compute the click position relative to the playfield's center,
     // in the same coordinate space the SVG uses (so SAFE_RADIUS matches).
     const rect = svg.getBoundingClientRect();
@@ -739,10 +1387,10 @@
     const dxUnits = (e.clientX - cx) / pxPerUnit;
     const dyUnits = (e.clientY - cy) / pxPerUnit;
     const dist    = Math.hypot(dxUnits, dyUnits);
-
+ 
     if (dist > SAFE_RADIUS) close();
   });
-
+ 
   // Scroll away closes — with debounce, so tiny scrolls don't fire
   let scrollTimer = null;
   window.addEventListener("scroll", () => {
@@ -753,12 +1401,12 @@
       if (rect.bottom < 0 || rect.top > window.innerHeight) close();
     }, 80);
   }, { passive: true });
-
+ 
   restartBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     reset();
   });
-
+ 
   } // end init
 })();
 </script>

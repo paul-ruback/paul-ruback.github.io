@@ -95,16 +95,16 @@
     <span id="photo-count"></span>
   </header>
  
-  <!-- GALLERY -->
-  <section id="sec-gallery">
-    <div class="gallery" id="gallery"></div>
-  </section>
- 
-  <!-- UPLOAD -->
-  <section id="sec-upload">
-    <div class="bio-wrap">
-      <span class="bio-label">Background</span>
-      <div class="bio-text">
+ <!-- WALL -->
+<section id="sec-wall">
+  <div class="gallery" id="gallery"></div>
+</section>
+
+<!-- BIO -->
+<section id="sec-bio">
+  <div class="bio-wrap">
+    <span class="bio-label">Background</span>
+    <div class="bio-text">
         <p>Berkeley trained product-designer, I specialize in UI/UX development and approach building as fluid & relational. I work on/in cognitive linguistics and apply this to both my creative and professional work. </p>
               <p>Skills include coding in Python and R; training in neural network-modeling, chemistry, biology, and economics. I have designed for J.P Morgan Chase, the Environmental Protection Agency, Hopelab (NGO), Numi Tea, The School of Public Health (UC Berkeley), The Product-Life Institute, The Schoolab, and The Paris School of International Affairs. What compels me is the act of design and iteration - building worlds by language, technology, sensibility, texture & color.</p>
       </div>
@@ -121,32 +121,32 @@
   </div>
  
   <!-- CUBE NAV -->
-  <nav class="cnav" id="cnav">
-    <div class="cnav-inner" id="ci">
-      <div class="nav-labels">
-        <span class="nav-lbl" id="lbl-gallery" onclick="cubeTo('gallery')">Gallery</span>
-        <div class="nav-div"></div>
-        <span class="nav-lbl" id="lbl-upload" onclick="cubeTo('upload')">Upload</span>
-        <div class="nav-div"></div>
-        <span class="nav-lbl" onclick="window.location.href='iteration.html'">Iteration <span class="nav-arrow">→</span></span>
-      </div>
-      <div class="cube-scene" id="cube-scene">
-        <div class="cube" id="cube" style="--ry:0deg">
-          <div class="cube-face face-front"></div>
-          <div class="cube-face face-back"></div>
-          <div class="cube-face face-left"></div>
-          <div class="cube-face face-right"></div>
-          <div class="cube-face face-top"></div>
-          <div class="cube-face face-bottom"></div>
-        </div>
+<nav class="cnav" id="cnav">
+  <div class="cnav-inner" id="ci">
+    <div class="nav-labels">
+      <span class="nav-lbl" id="lbl-wall" onclick="cubeTo('wall')">Wall</span>
+      <div class="nav-div"></div>
+      <span class="nav-lbl" id="lbl-bio" onclick="cubeTo('bio')">Bio</span>
+      <div class="nav-div"></div>
+      <span class="nav-lbl" onclick="window.location.href='make.html'">Make <span class="nav-arrow">→</span></span>
+    </div>
+    <div class="cube-scene" id="cube-scene">
+      <div class="cube" id="cube" style="--ry:0deg">
+        <div class="cube-face face-front"></div>
+        <div class="cube-face face-back"></div>
+        <div class="cube-face face-left"></div>
+        <div class="cube-face face-right"></div>
+        <div class="cube-face face-top"></div>
+        <div class="cube-face face-bottom"></div>
       </div>
     </div>
-    <div class="cube-dots">
-      <div class="cube-dot active" id="dot-gallery"></div>
-      <div class="cube-dot"        id="dot-upload"></div>
-      <div class="cube-dot"        id="dot-iter"></div>
-    </div>
-  </nav>
+  </div>
+  <div class="cube-dots">
+    <div class="cube-dot active" id="dot-wall"></div>
+    <div class="cube-dot"        id="dot-bio"></div>
+    <div class="cube-dot"        id="dot-make"></div>
+  </div>
+</nav>
  
   <script>
     const photos = [
@@ -223,9 +223,9 @@ const cnav      = document.getElementById('cnav');
 const ci        = document.getElementById('ci');
 const cube      = document.getElementById('cube');
 const cubeScene = document.getElementById('cube-scene');
-const sections  = ['gallery','upload'];
-const rots      = { gallery:0, upload:-90 };
-let navTimer=null, busy=false, cur='gallery', open=false, collapseTimer=null;
+const sections  = ['wall','bio'];
+const rots      = { wall:0, bio:-90 };
+let navTimer=null, busy=false, cur='wall', open=false, collapseTimer=null;
 const isTouch = () => window.matchMedia('(hover:none)').matches;
 
 function collapse() {
@@ -278,75 +278,7 @@ window.addEventListener('scroll', ()=>{
   cnav.classList.add('out');
   clearTimeout(navTimer);
   if(!busy){
-    let active='gallery';
-    sections.forEach(s=>{
-      const el=document.getElementById('sec-'+s);
-      if(el && window.scrollY>=el.offsetTop-window.innerHeight/2) active=s;
-    });
-    if(active!==cur){ rotateTo(active); setActive(active); }
-  }
-  navTimer = setTimeout(()=>cnav.classList.remove('out'), 850);
-});// ── CUBE NAV ──
-const cnav      = document.getElementById('cnav');
-const ci        = document.getElementById('ci');
-const cube      = document.getElementById('cube');
-const cubeScene = document.getElementById('cube-scene');
-const sections  = ['gallery','upload'];
-const rots      = { gallery:0, upload:-90 };
-let navTimer=null, busy=false, cur='gallery', open=false, collapseTimer=null;
-const isTouch = () => window.matchMedia('(hover:none)').matches;
-
-function collapse() {
-  open = false;
-  ci.classList.remove('open');
-}
-function resetCollapseTimer() {
-  clearTimeout(collapseTimer);
-  collapseTimer = setTimeout(collapse, 5000);
-}
-function setActive(name) {
-  cur = name;
-  sections.forEach(s => {
-    const lbl = document.getElementById('lbl-'+s);
-    const dot = document.getElementById('dot-'+s);
-    if(lbl) lbl.classList.toggle('active', s===name);
-    if(dot) dot.classList.toggle('active', s===name);
-  });
-}
-function rotateTo(name) {
-  cube.style.animation = 'none';
-  cube.style.setProperty('--ry', rots[name]+'deg');
-  cube.style.transform = `rotateY(${rots[name]}deg)`;
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{ cube.style.animation=''; }));
-}
-function cubeTo(name) {
-  const el = document.getElementById('sec-'+name);
-  if(!el) return;
-  busy = true;
-  rotateTo(name); setActive(name);
-  window.scrollTo({ top:el.offsetTop, behavior:'smooth' });
-  clearTimeout(collapseTimer);
-  collapse();
-  setTimeout(()=>{ busy=false; }, 700);
-}
-cubeScene.addEventListener('click', ()=>{
-  if(!isTouch()) return;
-  open = !open;
-  ci.classList.toggle('open', open);
-  if(open) resetCollapseTimer();
-  else clearTimeout(collapseTimer);
-});
-cnav.addEventListener('pointerenter', ()=>{ clearTimeout(collapseTimer); });
-cnav.addEventListener('pointerleave', ()=>{ if(open) resetCollapseTimer(); });
-document.addEventListener('click', e=>{
-  if(!isTouch()) return;
-  if(!cnav.contains(e.target)){ clearTimeout(collapseTimer); collapse(); }
-});
-window.addEventListener('scroll', ()=>{
-  cnav.classList.add('out');
-  clearTimeout(navTimer);
-  if(!busy){
-    let active='gallery';
+    let active='wall';
     sections.forEach(s=>{
       const el=document.getElementById('sec-'+s);
       if(el && window.scrollY>=el.offsetTop-window.innerHeight/2) active=s;

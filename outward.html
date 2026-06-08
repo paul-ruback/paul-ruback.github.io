@@ -1,0 +1,793 @@
+<!--
+  Outward — tunnel view (v2).
+ 
+  You fly forward through a circular tunnel. The ship sits near the bottom
+  of the foreground; you steer it around the rim using the right joystick
+  or arrow keys. Asteroids appear at the back of the tunnel and rush toward
+  you; shoot them before they arrive. The portal grows from a far point
+  until you've cleared the level, then you pass through it.
+ 
+  Inputs (all work simultaneously):
+    • Right circle (drag) or arrow keys / WASD : steer ship around the rim
+    • Left circle (tap) or spacebar           : fire shot into the tunnel
+    • Spacebar also begins / restarts the game from any banner state.
+ 
+  Forward speed accelerates within each level — slow at the start, faster
+  the deeper you get. Levels follow Fibonacci: 1, 1, 2, 3, 5, 8, 13, 21.
+-->
+ 
+<style>
+  #ow-root, #ow-root * { box-sizing: border-box; }
+ 
+  #ow-root {
+    --ow-ink:   #1a1a1a;
+    --ow-ink-2: #5a5a5a;
+    --ow-ink-3: #9a9a9a;
+    --ow-bg:    #f5f3ee;
+    --ow-mono:  ui-monospace, "SF Mono", Menlo, monospace;
+    --ow-serif: 'Spectral', Georgia, serif;
+ 
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    background: var(--ow-bg);
+    font-family: var(--ow-serif);
+    color: var(--ow-ink);
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+ 
+  .ow-title {
+    position: absolute;
+    top: 20px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--ow-mono);
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ow-ink-3);
+    pointer-events: none;
+  }
+ 
+  #ow-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+ 
+  .ow-hud {
+    position: absolute;
+    top: 24px;
+    font-family: var(--ow-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ow-ink-2);
+    pointer-events: none;
+  }
+  .ow-hud.left  { left: 28px; }
+  .ow-hud.right { right: 28px; }
+ 
+  .ow-hint {
+    position: absolute;
+    bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--ow-mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ow-ink-3);
+    pointer-events: none;
+    text-align: center;
+  }
+ 
+  .ow-banner {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    z-index: 10;
+    pointer-events: auto;
+    padding: 32px 40px;
+    background: rgba(245, 243, 238, 0.96);
+    border: 1px solid var(--ow-ink);
+    min-width: 280px;
+  }
+  .ow-banner.show { display: flex; }
+  .ow-banner-title {
+    font-family: var(--ow-serif);
+    font-style: italic;
+    font-size: 1.9rem;
+    color: var(--ow-ink);
+    text-align: center;
+  }
+  .ow-banner-sub {
+    font-family: var(--ow-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ow-ink-2);
+    text-align: center;
+  }
+  .ow-banner-btn {
+    margin-top: 8px;
+    font-family: var(--ow-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--ow-ink);
+    border: 1px solid var(--ow-ink);
+    padding: 8px 18px;
+    cursor: pointer;
+  }
+  .ow-banner-btn:hover {
+    background: var(--ow-ink);
+    color: var(--ow-bg);
+  }
+</style>
+ 
+<div id="ow-root">
+  <div class="ow-title">outward</div>
+  <div class="ow-hud left">  level · <span id="ow-level">1</span></div>
+  <div class="ow-hud right"> <span id="ow-remaining">1</span> · to clear</div>
+ 
+  <svg id="ow-svg" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet">
+    <!-- tunnel mouth: the visible boundary of the playfield -->
+    <circle id="ow-mouth"
+            cx="500" cy="350" r="240"
+            fill="none"
+            stroke="#1a1a1a"
+            stroke-width="1.2" />
+ 
+    <!-- minimal radial spokes suggesting depth -->
+    <g id="ow-spokes" stroke="#1a1a1a" stroke-width="0.5" opacity="0.18">
+      <!-- 8 radial spokes from center; they're decorative only -->
+      <line x1="500" y1="350" x2="500" y2="110" />   <!-- 12 -->
+      <line x1="500" y1="350" x2="670" y2="180" />   <!-- 1:30 -->
+      <line x1="500" y1="350" x2="740" y2="350" />   <!-- 3 -->
+      <line x1="500" y1="350" x2="670" y2="520" />   <!-- 4:30 -->
+      <line x1="500" y1="350" x2="500" y2="590" />   <!-- 6 -->
+      <line x1="500" y1="350" x2="330" y2="520" />   <!-- 7:30 -->
+      <line x1="500" y1="350" x2="260" y2="350" />   <!-- 9 -->
+      <line x1="500" y1="350" x2="330" y2="180" />   <!-- 10:30 -->
+    </g>
+ 
+    <!-- receding depth rings (added dynamically each frame to suggest forward motion) -->
+    <g id="ow-depth-rings"></g>
+ 
+    <!-- portal at the back of the tunnel: drawn as a notched ring with an
+         orientation tick, so it reads as a passage rather than another
+         circular object. Re-drawn each frame from the JS render. -->
+    <g id="ow-portal" opacity="0.4"></g>
+ 
+    <!-- asteroids (rendered with depth scaling) -->
+    <g id="ow-asteroids"></g>
+ 
+    <!-- shots traveling into the tunnel -->
+    <g id="ow-shots"></g>
+ 
+    <!-- the ship — fixed in the foreground, just slides around the rim -->
+    <g id="ow-ship"
+       transform="translate(500 540) rotate(-90)"
+       style="pointer-events: none;">
+      <polygon points="0,-14 11,11 -11,11"
+               fill="none"
+               stroke="#1a1a1a"
+               stroke-width="1.3"
+               stroke-linejoin="round" />
+    </g>
+ 
+    <!-- fire button -->
+    <g id="ow-fire-group" style="cursor: pointer;">
+      <circle id="ow-fire"
+              cx="130" cy="500" r="70"
+              fill="transparent"
+              stroke="#1a1a1a"
+              stroke-width="1" />
+      <text x="130" y="500"
+            text-anchor="middle" dominant-baseline="central"
+            font-family="ui-monospace, monospace"
+            font-size="10" letter-spacing="2"
+            fill="#9a9a9a"
+            style="text-transform: uppercase; pointer-events: none;">
+        fire
+      </text>
+    </g>
+ 
+    <!-- steer joystick -->
+    <g id="ow-steer-group" style="cursor: grab;">
+      <circle id="ow-steer"
+              cx="870" cy="500" r="70"
+              fill="transparent"
+              stroke="#1a1a1a"
+              stroke-width="1" />
+      <text x="870" y="500"
+            text-anchor="middle" dominant-baseline="central"
+            font-family="ui-monospace, monospace"
+            font-size="10" letter-spacing="2"
+            fill="#9a9a9a"
+            style="text-transform: uppercase; pointer-events: none;">
+        steer
+      </text>
+    </g>
+ 
+    <!-- joystick thumb -->
+    <circle id="ow-thumb"
+            cx="870" cy="500" r="12"
+            fill="#1a1a1a"
+            opacity="0"
+            style="pointer-events: none; transition: opacity 0.15s ease;" />
+  </svg>
+ 
+  <div class="ow-hint">
+    steer · arrow keys or drag &nbsp;·&nbsp; fire · space or tap
+  </div>
+ 
+  <div class="ow-banner" id="ow-banner">
+    <div class="ow-banner-title" id="ow-banner-title">outward</div>
+    <div class="ow-banner-sub"   id="ow-banner-sub">press space or tap fire to begin</div>
+    <button class="ow-banner-btn" id="ow-banner-btn">begin</button>
+  </div>
+</div>
+ 
+<script>
+(function () {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+ 
+  function init() {
+ 
+    // ── geometry & constants ───────────────────────────────────────
+    const VB_W = 1000, VB_H = 700;
+    const CX = 500, CY = 350;            // tunnel center on screen
+    const TUNNEL_R = 240;                // visible tunnel mouth radius
+ 
+    // Pseudo-3D perspective:
+    //   For an object at depth z (z > 0 = into screen), its on-screen
+    //   scale = FOCAL / (FOCAL + z). Larger FOCAL = flatter perspective.
+    const FOCAL = 380;
+    const NEAR_Z = 0;                    // ship's plane
+    const FAR_Z  = 1400;                 // spawn distance
+ 
+    // Ship sits on a circle in the foreground. It slides around this
+    // rim, not into the tunnel.
+    const SHIP_RIM_R = 180;              // radius from center where the ship rides
+    const SHIP_HIT_R = 18;               // collision radius at near plane
+ 
+    // Asteroid base size at near plane
+    const ASTEROID_BASE_R = 20;
+    const ASTEROID_BASE_R_VAR = 5;
+ 
+    // Forward speed within a level — accelerates over time
+    const FWD_SPEED_START = 0.25;        // viewBox-depth units per ms
+    const FWD_SPEED_END   = 1.10;
+    const LEVEL_ACCEL_MS  = 28000;       // ramp duration
+ 
+    // Shots: they're propelled INTO the tunnel at high speed
+    const SHOT_INWARD_SPEED = 2.6;
+    const SHOT_FIRE_COOLDOWN = 180;
+ 
+    // Keyboard steer: rim-position change per ms (clockwise positive)
+    const KEY_STEER_SPEED = 0.0028;      // radians per ms
+ 
+    // Depth rings (decorative — animate inward to suggest motion)
+    const DEPTH_RING_COUNT  = 6;
+    const DEPTH_RING_SPACE  = 220;       // depth between rings
+ 
+    const LEVELS = [1, 1, 2, 3, 5, 8, 13, 21];
+ 
+    // ── DOM refs ───────────────────────────────────────────────────
+    const svg        = document.getElementById("ow-svg");
+    const ship       = document.getElementById("ow-ship");
+    const thumb      = document.getElementById("ow-thumb");
+    const fireGroup  = document.getElementById("ow-fire-group");
+    const steerGroup = document.getElementById("ow-steer-group");
+    const asteroidsG = document.getElementById("ow-asteroids");
+    const shotsG     = document.getElementById("ow-shots");
+    const depthRingsG= document.getElementById("ow-depth-rings");
+    const portal     = document.getElementById("ow-portal");
+    const levelEl    = document.getElementById("ow-level");
+    const remainingEl= document.getElementById("ow-remaining");
+    const banner     = document.getElementById("ow-banner");
+    const bannerTitle= document.getElementById("ow-banner-title");
+    const bannerSub  = document.getElementById("ow-banner-sub");
+    const bannerBtn  = document.getElementById("ow-banner-btn");
+ 
+    // ── state ──────────────────────────────────────────────────────
+    let gameState = "idle";   // idle | playing | crashed | won
+    let levelIdx = 0;
+ 
+    // Ship: position on the rim, measured as an angle. 0 = right, π/2 = bottom,
+    // π = left, etc. We start the ship at the bottom (π/2).
+    let shipAngle = Math.PI / 2;
+ 
+    // Objects in the tunnel
+    let asteroids = [];   // { id, x, y, z, r, alive }
+    let shots = [];       // { id, x, y, z, vz }
+    let nextAstId = 0;
+    let nextShotId = 0;
+ 
+    // Forward "camera" travel for the level — drives z-decrement for asteroids
+    let levelElapsed = 0;
+    let portalArrived = false;
+ 
+    // Depth rings (drift through to suggest motion)
+    let depthRings = [];   // [z, z, z, ...]
+    // initial spacing
+    for (let i = 0; i < DEPTH_RING_COUNT; i++) {
+      depthRings.push(200 + i * DEPTH_RING_SPACE);
+    }
+ 
+    let lastTs = 0;
+    let lastFireTs = 0;
+ 
+    // input states
+    let steerActive = false;
+    let steerPointerId = null;
+    let steerFrac = { x: 0, y: 0 };
+    const keys = { up:false, down:false, left:false, right:false };
+ 
+    // ── pseudo-3D projection ───────────────────────────────────────
+    function project(x, y, z) {
+      const scale = FOCAL / (FOCAL + Math.max(z, 0.1));
+      return {
+        sx: CX + (x - CX) * scale,
+        sy: CY + (y - CY) * scale,
+        scale,
+      };
+    }
+ 
+    // ── inputs: steer joystick (touch + mouse + trackpad) ──────────
+    function screenToViewBox(clientX, clientY) {
+      const rect = svg.getBoundingClientRect();
+      const scale = Math.min(rect.width / VB_W, rect.height / VB_H);
+      const offsetX = (rect.width - VB_W * scale) / 2;
+      const offsetY = (rect.height - VB_H * scale) / 2;
+      return {
+        x: (clientX - rect.left - offsetX) / scale,
+        y: (clientY - rect.top  - offsetY) / scale,
+      };
+    }
+    function setSteerFromPointer(clientX, clientY) {
+      const pt = screenToViewBox(clientX, clientY);
+      const dx = pt.x - 870;
+      const dy = pt.y - 500;
+      const dist = Math.hypot(dx, dy);
+      let nx, ny;
+      if (dist > 70) { nx = (dx / dist) * 70; ny = (dy / dist) * 70; }
+      else           { nx = dx; ny = dy; }
+      thumb.setAttribute("cx", 870 + nx);
+      thumb.setAttribute("cy", 500 + ny);
+      thumb.setAttribute("opacity", "1");
+      steerFrac.x = nx / 70;
+      steerFrac.y = ny / 70;
+    }
+    function steerDown(e) {
+      e.preventDefault();
+      steerActive = true;
+      steerPointerId = e.pointerId;
+      try { steerGroup.setPointerCapture(e.pointerId); } catch (err) {}
+      setSteerFromPointer(e.clientX, e.clientY);
+    }
+    function steerMove(e) {
+      if (!steerActive || e.pointerId !== steerPointerId) return;
+      e.preventDefault();
+      setSteerFromPointer(e.clientX, e.clientY);
+    }
+    function steerUp(e) {
+      if (e.pointerId !== steerPointerId) return;
+      steerActive = false;
+      steerPointerId = null;
+      steerFrac.x = 0;
+      steerFrac.y = 0;
+      thumb.setAttribute("opacity", "0");
+      try { steerGroup.releasePointerCapture(e.pointerId); } catch (err) {}
+    }
+    steerGroup.addEventListener("pointerdown", steerDown);
+    steerGroup.addEventListener("pointermove", steerMove);
+    steerGroup.addEventListener("pointerup",   steerUp);
+    steerGroup.addEventListener("pointercancel", steerUp);
+    steerGroup.addEventListener("lostpointercapture", steerUp);
+ 
+    // ── inputs: keyboard ───────────────────────────────────────────
+    document.addEventListener("keydown", (e) => {
+      if (e.repeat) {
+        if (e.code === "Space" && gameState === "playing") {
+          tryFire();
+          e.preventDefault();
+        }
+        return;
+      }
+      switch (e.code) {
+        case "ArrowUp":    case "KeyW": keys.up    = true; e.preventDefault(); break;
+        case "ArrowDown":  case "KeyS": keys.down  = true; e.preventDefault(); break;
+        case "ArrowLeft":  case "KeyA": keys.left  = true; e.preventDefault(); break;
+        case "ArrowRight": case "KeyD": keys.right = true; e.preventDefault(); break;
+        case "Space":      handleSpaceOrFire(); e.preventDefault(); break;
+      }
+    });
+    document.addEventListener("keyup", (e) => {
+      switch (e.code) {
+        case "ArrowUp":    case "KeyW": keys.up    = false; break;
+        case "ArrowDown":  case "KeyS": keys.down  = false; break;
+        case "ArrowLeft":  case "KeyA": keys.left  = false; break;
+        case "ArrowRight": case "KeyD": keys.right = false; break;
+      }
+    });
+ 
+    // ── fire ───────────────────────────────────────────────────────
+    function tryFire() {
+      if (gameState !== "playing") return;
+      const now = performance.now();
+      if (now - lastFireTs < SHOT_FIRE_COOLDOWN) return;
+      lastFireTs = now;
+      // Shot spawns at the ship's screen position and travels inward
+      // (z increasing) at constant SHOT_INWARD_SPEED.
+      const shipX = CX + SHIP_RIM_R * Math.cos(shipAngle);
+      const shipY = CY + SHIP_RIM_R * Math.sin(shipAngle);
+      shots.push({
+        id: nextShotId++,
+        x: shipX,
+        y: shipY,
+        z: 0,
+        vz: SHOT_INWARD_SPEED,
+      });
+      fireGroup.firstElementChild.setAttribute("stroke-width", "2");
+      setTimeout(() => fireGroup.firstElementChild.setAttribute("stroke-width", "1"), 90);
+    }
+    function handleSpaceOrFire() {
+      switch (gameState) {
+        case "idle":    startGame();    break;
+        case "playing": tryFire();      break;
+        case "crashed": restartLevel(); break;
+        case "won":     levelIdx = 0; restartLevel(); break;
+      }
+    }
+    fireGroup.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      handleSpaceOrFire();
+    });
+ 
+    // ── asteroid spawning ──────────────────────────────────────────
+    // For a level of N asteroids, spawn them all up front at varying depths
+    // spread across FAR_Z, so they arrive at the player in sequence as the
+    // camera moves forward. Each asteroid has a random rim angle.
+    function spawnLevel(count) {
+      asteroids = [];
+      shots = [];
+      portalArrived = false;
+      levelElapsed = 0;
+      const zSpacing = FAR_Z / Math.max(count, 2);
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const rimR  = SHIP_RIM_R * (0.65 + Math.random() * 0.5);
+        const x = CX + rimR * Math.cos(angle);
+        const y = CY + rimR * Math.sin(angle);
+        const z = (i + 1) * zSpacing + (Math.random() - 0.5) * zSpacing * 0.5;
+        asteroids.push({
+          id: nextAstId++,
+          x, y, z,
+          r: ASTEROID_BASE_R + (Math.random() * 2 - 1) * ASTEROID_BASE_R_VAR,
+          alive: true,
+        });
+      }
+    }
+ 
+    // ── per-frame forward speed (accelerates within the level) ────
+    function currentFwdSpeed() {
+      const t = Math.min(1, levelElapsed / LEVEL_ACCEL_MS);
+      // ease-in: speed grows slowly at first, faster later
+      const eased = t * t;
+      return FWD_SPEED_START + (FWD_SPEED_END - FWD_SPEED_START) * eased;
+    }
+ 
+    // ── render ─────────────────────────────────────────────────────
+    function renderShip() {
+      const sx = CX + SHIP_RIM_R * Math.cos(shipAngle);
+      const sy = CY + SHIP_RIM_R * Math.sin(shipAngle);
+      // Ship triangle points INTO the tunnel (toward the center).
+      const dirAngle = Math.atan2(CY - sy, CX - sx) * 180 / Math.PI + 90;
+      ship.setAttribute("transform", `translate(${sx} ${sy}) rotate(${dirAngle})`);
+    }
+    function renderAsteroids() {
+      while (asteroidsG.firstChild) asteroidsG.removeChild(asteroidsG.firstChild);
+      for (const a of asteroids) {
+        if (!a.alive) continue;
+        if (a.z < -50) continue;
+        const p = project(a.x, a.y, a.z);
+        const r = a.r * p.scale;
+        if (r < 0.6) continue;
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", p.sx.toFixed(1));
+        c.setAttribute("cy", p.sy.toFixed(1));
+        c.setAttribute("r", r.toFixed(1));
+        c.setAttribute("fill", "none");
+        c.setAttribute("stroke", "#1a1a1a");
+        c.setAttribute("stroke-width", (1.2 * Math.max(0.4, p.scale)).toFixed(2));
+        asteroidsG.appendChild(c);
+      }
+    }
+    function renderShots() {
+      while (shotsG.firstChild) shotsG.removeChild(shotsG.firstChild);
+      for (const s of shots) {
+        const p = project(s.x, s.y, s.z);
+        const r = 3 * p.scale;
+        if (r < 0.4) continue;
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", p.sx.toFixed(1));
+        c.setAttribute("cy", p.sy.toFixed(1));
+        c.setAttribute("r", r.toFixed(1));
+        c.setAttribute("fill", "#1a1a1a");
+        shotsG.appendChild(c);
+      }
+    }
+    function renderDepthRings() {
+      while (depthRingsG.firstChild) depthRingsG.removeChild(depthRingsG.firstChild);
+      for (const z of depthRings) {
+        if (z < 0) continue;
+        const p = project(CX, CY, z);
+        const r = TUNNEL_R * p.scale;
+        if (r < 6) continue;
+        const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", CX);
+        c.setAttribute("cy", CY);
+        c.setAttribute("r", r.toFixed(1));
+        c.setAttribute("fill", "none");
+        c.setAttribute("stroke", "#1a1a1a");
+        c.setAttribute("stroke-width", "0.5");
+        // Dashed pattern makes these read as scaffolding, distinct from
+        // the solid-stroke polygons (asteroids) and the bold portal.
+        c.setAttribute("stroke-dasharray", "3 8");
+        c.setAttribute("opacity", (0.18 * p.scale).toFixed(3));
+        depthRingsG.appendChild(c);
+      }
+    }
+    function renderPortal() {
+      while (portal.firstChild) portal.removeChild(portal.firstChild);
+ 
+      let portalZ;
+      if (portalArrived) portalZ = 0;
+      else {
+        const aliveZs = asteroids.filter(a => a.alive).map(a => a.z);
+        const maxAst = aliveZs.length ? Math.max(...aliveZs) : 0;
+        portalZ = Math.max(maxAst + 250, 120);
+      }
+      const p = project(CX, CY, portalZ);
+      const r = Math.max(60 * p.scale, 4);
+      const strokeW = portalArrived ? 2 : 1.4;
+ 
+      // Notched arc: a near-complete circle with a gap at the top (12 o'clock),
+      // suggesting an opening to fly through. The gap is small at distance,
+      // wider as it approaches — but a fixed arc-angle works well enough.
+      const gapHalfRad = 0.32;   // ~37° total gap
+      const startA = -Math.PI / 2 + gapHalfRad;   // gap is centered at 12 o'clock
+      const endA   = -Math.PI / 2 - gapHalfRad + Math.PI * 2;
+      const x1 = CX + r * Math.cos(startA);
+      const y1 = CY + r * Math.sin(startA);
+      const x2 = CX + r * Math.cos(endA);
+      const y2 = CY + r * Math.sin(endA);
+      const arc = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      arc.setAttribute(
+        "d",
+        `M ${x1.toFixed(1)} ${y1.toFixed(1)} ` +
+        `A ${r.toFixed(1)} ${r.toFixed(1)} 0 1 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`
+      );
+      arc.setAttribute("fill", "none");
+      arc.setAttribute("stroke", "#1a1a1a");
+      arc.setAttribute("stroke-width", strokeW.toFixed(2));
+      arc.setAttribute("stroke-linecap", "round");
+      portal.appendChild(arc);
+ 
+      // Orientation tick at the very top — a small notch pointing inward
+      // marking the gap's center. Helps the eye locate the passage.
+      if (r > 10) {
+        const tickInner = r - r * 0.18;
+        const tickOuter = r + r * 0.06;
+        const tx1 = CX, ty1 = CY - tickInner;
+        const tx2 = CX, ty2 = CY - tickOuter;
+        const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        tick.setAttribute("x1", tx1.toFixed(1));
+        tick.setAttribute("y1", ty1.toFixed(1));
+        tick.setAttribute("x2", tx2.toFixed(1));
+        tick.setAttribute("y2", ty2.toFixed(1));
+        tick.setAttribute("stroke", "#1a1a1a");
+        tick.setAttribute("stroke-width", strokeW.toFixed(2));
+        tick.setAttribute("stroke-linecap", "round");
+        portal.appendChild(tick);
+      }
+ 
+      portal.setAttribute("opacity", portalArrived ? "1" : "0.55");
+    }
+    function updateHUD() {
+      levelEl.textContent = levelIdx + 1;
+      remainingEl.textContent = asteroids.filter(a => a.alive).length;
+    }
+ 
+    // ── game loop ──────────────────────────────────────────────────
+    function tick(ts) {
+      if (!lastTs) lastTs = ts;
+      const dt = ts - lastTs;
+      lastTs = ts;
+ 
+      if (gameState === "playing") {
+        levelElapsed += dt;
+        const fwd = currentFwdSpeed();
+ 
+        // Move the camera forward: decrement z on every object in the world
+        const dz = fwd * dt;
+        for (const a of asteroids) a.z -= dz;
+        for (const r of depthRings) {}  // depthRings is an array of numbers, mutated below
+        for (let i = 0; i < depthRings.length; i++) {
+          depthRings[i] -= dz;
+          if (depthRings[i] < 0) {
+            depthRings[i] = Math.max(...depthRings) + DEPTH_RING_SPACE;
+          }
+        }
+ 
+        // Steering: rim angle changes
+        if (steerActive) {
+          // Map joystick position to a rim angle. atan2(y, x) gives the
+          // direction; we use this directly as the ship's angle.
+          const mag = Math.hypot(steerFrac.x, steerFrac.y);
+          if (mag > 0.06) {
+            shipAngle = Math.atan2(steerFrac.y, steerFrac.x);
+          }
+        } else {
+          // Keyboard: arrows/WASD slide the ship around the rim
+          let dAngle = 0;
+          // left/right rotate around the rim
+          if (keys.left)  dAngle -= 1;
+          if (keys.right) dAngle += 1;
+          // up/down also work via a vertical rim mapping (ship moves
+          // toward top with up, toward bottom with down)
+          if (keys.up || keys.down) {
+            const targetAngle = keys.up ? -Math.PI / 2 : Math.PI / 2;
+            const diff = ((targetAngle - shipAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
+            dAngle += Math.sign(diff) * 0.5;
+          }
+          shipAngle += dAngle * KEY_STEER_SPEED * dt;
+        }
+ 
+        // Advance shots forward
+        shots = shots.filter(s => {
+          s.z += s.vz * dt;
+          // Cull when too far
+          if (s.z > FAR_Z + 100) return false;
+          // Check hits against asteroids near this shot's depth
+          for (const a of asteroids) {
+            if (!a.alive) continue;
+            if (Math.abs(a.z - s.z) > 60) continue;   // depth tolerance
+            // Project both to screen-space and compare in screen pixels
+            const pa = project(a.x, a.y, a.z);
+            const ps = project(s.x, s.y, s.z);
+            const dx = pa.sx - ps.sx, dy = pa.sy - ps.sy;
+            const ar = a.r * pa.scale;
+            if (Math.hypot(dx, dy) < ar + 4) {
+              a.alive = false;
+              return false;
+            }
+          }
+          return true;
+        });
+ 
+        // Check asteroid arrival at near plane (collision with ship)
+        const shipX = CX + SHIP_RIM_R * Math.cos(shipAngle);
+        const shipY = CY + SHIP_RIM_R * Math.sin(shipAngle);
+        for (const a of asteroids) {
+          if (!a.alive) continue;
+          if (a.z > 40) continue;   // far enough still
+          if (a.z < -60) {
+            // passed the player without hitting — count as missed, mark dead
+            a.alive = false;
+            continue;
+          }
+          // Now within striking distance. Compare to ship in screen space
+          // weighted by depth (smaller asteroids at depth give a small grace).
+          const pa = project(a.x, a.y, Math.max(a.z, 0));
+          const dx = pa.sx - shipX, dy = pa.sy - shipY;
+          const hitDist = a.r * pa.scale + SHIP_HIT_R;
+          if (Math.hypot(dx, dy) < hitDist) {
+            return crash();
+          }
+        }
+ 
+        // Portal activates once everything's cleared. Player passes through
+        // when portal reaches near plane.
+        const alive = asteroids.filter(a => a.alive).length;
+        if (alive === 0 && !portalArrived) {
+          // Rush the portal in
+          portalArrived = true;
+          // Brief delay before advancing — show the fly-through
+          setTimeout(() => {
+            if (gameState === "playing") advanceLevel();
+          }, 700);
+        }
+      }
+ 
+      renderShip();
+      renderDepthRings();
+      renderAsteroids();
+      renderShots();
+      renderPortal();
+      updateHUD();
+      requestAnimationFrame(tick);
+    }
+ 
+    // ── transitions ────────────────────────────────────────────────
+    function startGame() {
+      hideBanner();
+      gameState = "playing";
+      levelIdx = 0;
+      shipAngle = Math.PI / 2;
+      lastTs = 0;
+      spawnLevel(LEVELS[levelIdx]);
+    }
+    function crash() {
+      gameState = "crashed";
+      showBanner(
+        "you collided",
+        `level ${levelIdx + 1} · press space to try again`,
+        "try again",
+        () => restartLevel()
+      );
+    }
+    function restartLevel() {
+      hideBanner();
+      gameState = "playing";
+      shipAngle = Math.PI / 2;
+      lastTs = 0;
+      spawnLevel(LEVELS[levelIdx]);
+    }
+    function advanceLevel() {
+      levelIdx++;
+      if (levelIdx >= LEVELS.length) {
+        gameState = "won";
+        showBanner(
+          "you reached outward.",
+          "all eight levels cleared · press space to play again",
+          "play again",
+          () => { levelIdx = 0; restartLevel(); }
+        );
+        return;
+      }
+      gameState = "playing";
+      shipAngle = Math.PI / 2;
+      lastTs = 0;
+      spawnLevel(LEVELS[levelIdx]);
+    }
+ 
+    // ── banner control ─────────────────────────────────────────────
+    function showBanner(title, sub, btnLabel, btnAction) {
+      bannerTitle.textContent = title;
+      bannerSub.textContent = sub;
+      bannerBtn.textContent = btnLabel;
+      bannerBtn.onclick = btnAction;
+      banner.classList.add("show");
+    }
+    function hideBanner() {
+      banner.classList.remove("show");
+    }
+ 
+    // ── boot ───────────────────────────────────────────────────────
+    spawnLevel(LEVELS[0]);
+    showBanner(
+      "outward",
+      "press space or tap fire to begin",
+      "begin",
+      () => startGame()
+    );
+    requestAnimationFrame(tick);
+  }
+})();
+</script>

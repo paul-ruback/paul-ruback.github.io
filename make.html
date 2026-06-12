@@ -1,28 +1,3 @@
-<!--
-  Word Ring — game prototype v2.
-  • Click the tile to expand the playfield.
-  • Tap (or press SPACE) the word at center to launch it.
-  • Land on empty arc → tether outward. Land on existing word → it pushes
-    out, your new word takes the inner spot (stack capped at 2).
-  • Hit an inward DIP on the ring → the word falls quietly into it and the
-    sentence you built is revealed.
--->
-
-<!--
-  Numeric Field — full-viewport interactive background.
-
-  CMYK halftone of fine grains with soft physics. Cursor presence
-  attracts grains gently. Click anywhere or lift the cursor off the
-  window and grains receive a velocity kick that produces trampoline-
-  ring oscillations: bounce past rest, ring down through several
-  cycles, settle.
-
-  Sits behind every other artifact via position: fixed and z-index: -1.
-  All artifact stages are position:fixed z-index:9000 — when a stage
-  opens it covers the field, which is correct (the field is the page,
-  the stages are deliberate occlusions).
--->
-
 <style>
   /* ──────────── numeric field background ──────────── */
   #nf-canvas {
@@ -34,16 +9,6 @@
     z-index: -1;
     display: block;
   }
-
-  /* ──────────── invert toggle (top-right) ─────────────
-     Small circle that sits above all artifact stages. One click flips
-     the field's polarity — colors invert, physics reverse, blend mode
-     swaps. The button itself is a half/half split of cyan and magenta
-     with a black dot center, evoking a print registration mark. It
-     stays the same shape but the body.inverted class can be used to
-     swap its colors so it always reads against whichever background
-     is currently active.
-  --------------------------------------------------------- */
   #nf-invert {
     position: fixed;
     top: 24px; right: 24px;
@@ -82,24 +47,11 @@
   body.nf-inverted #nf-invert::after {
     background: #f5f3ee;
   }
-
-  /* ──────────── body.nf-inverted: dark-mode CSS overrides ─────
-     When the field is inverted, the canvas paints near-black instead
-     of paper-cream. The artifact tiles & labels would disappear into
-     the dark background without these overrides — they were styled
-     against light paper. We invert just the neutral grays here; the
-     channel colors (cyan, magenta) stay the same since they read
-     against either background.
-  --------------------------------------------------------- */
   body.nf-inverted {
     --wr-ink-3: #6e6e6e;
     --ow-ink-3: #6e6e6e;
     --ct-ink-3: #6e6e6e;
   }
-  /* Tile labels and borders sit on the field. In inverted mode we
-     lift them to pale ink so they remain readable against dark paper.
-     These rules target the elements directly rather than relying on
-     CSS vars, because some artifacts hardcode dark colors inline. */
   body.nf-inverted .wr-tile,
   body.nf-inverted .ow-tile,
   body.nf-inverted .ct-tile,
@@ -232,7 +184,7 @@
     // settle jitter, small circular grains rendered with arc().
     // 3.5px keeps the magazine-halftone look while cutting grain count
     // by ~30% vs 3px — a meaningful perf gain at imperceptible cost.
-    const CELL_PX = 3.5;
+    const CELL_PX = 4.5;
     const SETTLE_JITTER = 0.7;
     const GRAIN_R = 0.55;
 
@@ -242,14 +194,6 @@
     const SETTLE_RATE       = 0.14;
     const VELOCITY_DAMPING  = 0.93;
     const MAX_DISPLACEMENT  = 24;
-
-    // ── press attract: stronger pull while mouse/finger is held down ──
-    // While the pointer is pressed, grains near the cursor experience a
-    // much stronger attraction — creating a visible "indentation" that
-    // tracks the cursor as it drags. Springs and damping continue
-    // unchanged, so behind a moving press the field rebounds naturally.
-    const PRESSED_ATTRACT_RADIUS   = 180;   // wider than hover-attract
-    const PRESSED_ATTRACT_STRENGTH = 0.135; // ~3.5× hover-attract
 
     // ── lift / click reverb (impulse kick) ─────────────────────────
     const REVERB_KICK_VELOCITY = 2.6;
@@ -357,7 +301,6 @@
       prevX: 0, prevY: 0,
       lastMoveTs: 0,
       active: false,
-      pressed: false,
     };
 
     function applyKick(x, y) {
@@ -447,24 +390,12 @@
         applyKick(source.x, source.y);
         source.active = false;
       }
-      // A pointer leaving the document also releases any press — the
-      // drag depression should not persist when the cursor is gone.
-      source.pressed = false;
     });
     document.addEventListener("pointerdown", (e) => {
       applyKick(e.clientX, e.clientY);
-      // Mark as pressed so the frame loop applies the stronger
-      // press-attract force. Position already tracks via pointermove.
-      source.pressed = true;
-    });
-    document.addEventListener("pointerup", () => {
-      source.pressed = false;
     });
     // Cover the case where the pointer is "cancelled" by the OS or
     // scroll-into-gesture takeover, leaving pressed stuck on.
-    document.addEventListener("pointercancel", () => {
-      source.pressed = false;
-    });
     document.addEventListener("touchmove", (e) => {
       if (e.touches.length > 0) {
         const now = performance.now();
@@ -483,24 +414,11 @@
         source.active = true;
       }
     }, { passive: true });
-    // On touch devices the finger ON the screen IS the press — there's
-    // no hover-without-touch state. So touchstart sets pressed; touchend
-    // clears it. The existing applyKick still fires from pointerdown
-    // (which fires before touchstart on most browsers).
-    document.addEventListener("touchstart", (e) => {
-      if (e.touches.length > 0) {
-        source.x = e.touches[0].clientX;
-        source.y = e.touches[0].clientY;
-        source.active = true;
-        source.pressed = true;
-      }
-    }, { passive: true });
     document.addEventListener("touchend", () => {
       if (source.active) {
         applyKick(source.x, source.y);
         source.active = false;
       }
-      source.pressed = false;
     });
 
     // ── render loop ────────────────────────────────────────────────
@@ -545,26 +463,18 @@
         const g = grains[i];
         let fx = 0, fy = 0;
 
-        if (source.active) {
-          const dx = source.x - g.x;
-          const dy = source.y - g.y;
-          const dist = Math.hypot(dx, dy);
-          // When pressed, use a stronger force over a wider radius to
-          // produce a visible drag indentation. Otherwise use the gentle
-          // hover-attract.
-          const radius   = source.pressed ? PRESSED_ATTRACT_RADIUS   : ATTRACT_RADIUS;
-          const strength = source.pressed ? PRESSED_ATTRACT_STRENGTH : ATTRACT_STRENGTH;
-          if (dist > 0.5 && dist < radius) {
-            const t = 1 - dist / radius;
-            // Multiply by polarity: +1 = attract, -1 = repel, 0 = inert.
-            // This is what lets one click reverse the field's behavior
-            // — and the smooth lerp through 0 produces the deliberate
-            // "pause" mid-flip.
-            const f = strength * (t * t) * polarity;
-            fx += (dx / dist) * f;
-            fy += (dy / dist) * f;
-          }
-        }
+if (source.active) {
+  const dx = source.x - g.x;
+  const dy = source.y - g.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist > 0.5 && dist < ATTRACT_RADIUS) {
+    const t = 1 - dist / ATTRACT_RADIUS;
+    // Multiply by polarity: +1 = attract, -1 = repel, 0 = inert.
+    const f = ATTRACT_STRENGTH * (t * t) * polarity;
+    fx += (dx / dist) * f;
+    fy += (dy / dist) * f;
+  }
+}
 
         // Spring pulling grain back to rest — NOT polarity-multiplied.
         // Springs are structural; they always pull grains back to their

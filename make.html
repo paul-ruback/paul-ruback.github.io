@@ -242,6 +242,13 @@
   #ow-svg { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
   .ow-hud { position: absolute; top: 24px; font-family: var(--ow-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ow-ink-2); pointer-events: none; }
   .ow-hud.left { left: 28px; } .ow-hud.right { right: 28px; }
+  /* Remaining-asteroid pips — small filled circles, one per asteroid */
+  #ow-pips { display: inline-flex; gap: 5px; align-items: center; }
+  .ow-pip {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #1a1a1a; display: inline-block;
+    transition: opacity 0.2s ease;
+  }
   .ow-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); font-family: var(--ow-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ow-ink-3); pointer-events: none; text-align: center; }
   .ow-banner {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
@@ -257,44 +264,125 @@
 </style>
 
 <style>
-  /* ──────────── Ideas (flip cards) ──────────── */
+  /* ──────────── Ideas ──────────── */
   #ic-root, #ic-root * { box-sizing: border-box; }
   #ic-root {
-    --ic-ink: #1a1a1a; --ic-ink-2: #5a5a5a; --ic-ink-3: #9a9a9a;
-    --ic-bg: #f5f3ee; --ic-rule: rgba(0,0,0,0.16);
-    --ic-mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --ic-ink:   #1a1a1a; --ic-ink-2: #5a5a5a; --ic-ink-3: #9a9a9a;
+    --ic-bg:    rgba(245,243,238,0.96);
+    --ic-rule:  rgba(0,0,0,0.14);
+    --ic-mono:  ui-monospace, "SF Mono", Menlo, monospace;
     --ic-serif: 'Spectral', Georgia, serif;
     position: relative; width: 100%; padding: 40px 0;
     font-family: var(--ic-serif); color: var(--ic-ink);
   }
   .ic-grid { display: grid; grid-template-columns: repeat(2,220px); gap: 40px; justify-content: center; }
+
+  /* Tile — matches ow-tile and ps-tile */
   .ic-tile {
     width: 220px; height: 220px; border: 1px solid var(--ic-ink-3);
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: transform 0.25s ease, border-color 0.25s ease;
+    position: relative; overflow: hidden;
   }
   .ic-tile:hover { border-color: var(--ic-ink); transform: scale(1.02); }
-  .ic-tile-label { font-family: var(--ic-mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ic-ink-2); }
+  .ic-tile-label {
+    font-family: var(--ic-mono); font-size: 10px;
+    letter-spacing: 0.24em; text-transform: uppercase; color: var(--ic-ink-2);
+    position: absolute; bottom: 10px; left: 0; width: 100%; text-align: center;
+    pointer-events: none;
+  }
+
+  /* Resonance tile: canvas fills the space */
+  .resonance-tile { padding: 0; }
+  #resonance-canvas {
+    position: absolute; inset: 0; width: 220px; height: 220px;
+    display: block; pointer-events: none;
+  }
+
+  /* ── Stage ── */
   .ic-stage {
     position: fixed; inset: 0; background: rgba(245,243,238,0.97);
-    z-index: 9000; display: none; align-items: center; justify-content: center; padding: 40px;
+    z-index: 9000; display: none; align-items: center; justify-content: center;
   }
   .ic-stage.open { display: flex; animation: ic-fadein 0.25s ease forwards; }
   @keyframes ic-fadein { from { opacity: 0; } to { opacity: 1; } }
-  .ic-card {
-    width: min(440px,92vw); min-height: 420px; max-height: 90vh;
-    border: 1px solid var(--ic-ink); background: rgba(245,243,238,0.96);
-    padding: 36px 34px; display: flex; flex-direction: column; gap: 16px;
+
+  .ic-hint {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--ic-ink-3);
+    pointer-events: none; user-select: none; z-index: 9001;
+  }
+
+  /* ── Flip card container (kept as wrapper, no longer flips) ── */
+  .ic-flip-scene {
+    width: min(480px, 92vw); height: min(560px, 88vh);
     opacity: 0; transform: scale(0.96);
     transition: opacity 0.32s ease, transform 0.32s cubic-bezier(0.4,0,0.2,1);
   }
-  .ic-stage.open .ic-card { opacity: 1; transform: scale(1); }
-  .ic-eyebrow { font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ic-ink-3); }
-  .ic-title { font-family: var(--ic-serif); font-weight: 400; font-size: 1.6rem; line-height: 1.2; color: var(--ic-ink); margin: 0; letter-spacing: -0.005em; }
-  .ic-sub { font-family: var(--ic-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ic-ink-2); margin-top: -8px; }
-  .ic-body { font-family: var(--ic-serif); font-size: 0.95rem; line-height: 1.55; color: var(--ic-ink); margin: 0; }
-  .ic-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; border: 1px solid var(--ic-rule); background: rgba(0,0,0,0.04); }
-  .ic-hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ic-ink-3); pointer-events: none; user-select: none; z-index: 9001; }
+  .ic-stage.open .ic-flip-scene { opacity: 1; transform: scale(1); }
+
+  .ic-flip-inner { width: 100%; height: 100%; position: relative; }
+
+  /* Single face — no backface needed */
+  .ic-face {
+    position: absolute; inset: 0;
+    border: 1px solid var(--ic-ink);
+    background: var(--ic-bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px; overflow: hidden;
+  }
+  .ic-face-front canvas { display: block; cursor: crosshair; flex-shrink: 0; }
+
+  .ic-state-label {
+    font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.26em;
+    text-transform: uppercase; color: var(--ic-ink-3);
+    transition: color 0.8s ease; flex-shrink: 0;
+  }
+  .ic-state-label.coupling  { color: var(--ic-ink-2); }
+  .ic-state-label.resonance { color: var(--ic-ink);   }
+  .ic-state-label.flow      { color: var(--ic-ink); font-weight: 500; }
+
+  .ic-interaction-hint {
+    font-family: var(--ic-mono); font-size: 8px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--ic-ink-3); opacity: 0.6; flex-shrink: 0;
+  }
+
+  /* Description overlay: sits over the animation, fades in at Sustained Flow */
+  .ic-desc-overlay {
+    position: absolute; inset: 0;
+    background: var(--ic-bg);
+    padding: 44px 40px 36px;
+    display: flex; flex-direction: column; gap: 18px;
+    overflow-y: auto;
+    opacity: 0; pointer-events: none;
+    transition: opacity 1.2s ease;
+  }
+  .ic-desc-overlay.revealed {
+    opacity: 1; pointer-events: auto;
+  }
+
+  /* ── Back face: description text ── */
+  .ic-back-eyebrow {
+    font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.24em;
+    text-transform: uppercase; color: var(--ic-ink-3);
+  }
+  .ic-back-title {
+    font-family: var(--ic-serif); font-weight: 400; font-size: 1.9rem;
+    line-height: 1.15; color: var(--ic-ink); margin: 0; letter-spacing: -0.01em;
+  }
+  .ic-back-sub {
+    font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--ic-ink-2); margin-top: -8px;
+  }
+  .ic-back-divider {
+    height: 1px; background: var(--ic-rule); flex-shrink: 0;
+  }
+  .ic-back-body {
+    font-family: var(--ic-serif); font-size: 0.95rem; line-height: 1.65;
+    color: var(--ic-ink); margin: 0;
+  }
 </style>
 
 </head>
@@ -323,8 +411,8 @@
     <div class="ow-playfield" id="ow-playfield">
       <div class="ow-stage-title">outward</div>
       <div class="ow-hud left">level · <span id="ow-level">1</span></div>
-      <div class="ow-hud right"><span id="ow-remaining">1</span> · to clear</div>
-      <svg id="ow-svg" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet">
+      <div class="ow-hud right"><span id="ow-pips"></span></div>
+      <svg id="ow-svg" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" style="cursor:crosshair;">
         <circle id="ow-mouth" cx="500" cy="350" r="240" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
         <g id="ow-spokes" stroke="#1a1a1a" stroke-width="0.5" opacity="0.18">
           <line x1="500" y1="350" x2="500" y2="110"/>
@@ -343,20 +431,11 @@
         <g id="ow-ship" transform="translate(500 540) rotate(-90)" style="pointer-events:none;">
           <polygon points="0,-14 11,11 -11,11" fill="none" stroke="#1a1a1a" stroke-width="1.3" stroke-linejoin="round"/>
         </g>
-        <g id="ow-fire-group" style="cursor:pointer;">
-          <circle id="ow-fire" cx="130" cy="500" r="70" fill="transparent" stroke="#1a1a1a" stroke-width="1"/>
-          <text x="130" y="500" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace,monospace" font-size="10" letter-spacing="2" fill="#9a9a9a" style="text-transform:uppercase;pointer-events:none;">fire</text>
-        </g>
-        <g id="ow-steer-group" style="cursor:grab;">
-          <circle id="ow-steer" cx="870" cy="500" r="70" fill="transparent" stroke="#1a1a1a" stroke-width="1"/>
-          <text x="870" y="500" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace,monospace" font-size="10" letter-spacing="2" fill="#9a9a9a" style="text-transform:uppercase;pointer-events:none;">steer</text>
-        </g>
-        <circle id="ow-thumb" cx="870" cy="500" r="12" fill="#1a1a1a" opacity="0" style="pointer-events:none;transition:opacity 0.15s ease;"/>
       </svg>
-      <div class="ow-hint">steer · arrow keys or drag &nbsp;·&nbsp; fire · space or tap</div>
+      <div class="ow-hint">move · aim ship around the ring &nbsp;·&nbsp; click or space · fire</div>
       <div class="ow-banner" id="ow-banner">
         <div class="ow-banner-title" id="ow-banner-title">outward</div>
-        <div class="ow-banner-sub" id="ow-banner-sub">press space or tap fire to begin</div>
+        <div class="ow-banner-sub" id="ow-banner-sub">clear the tunnel · reach the portal</div>
         <button class="ow-banner-btn" id="ow-banner-btn">begin</button>
       </div>
     </div>
@@ -402,31 +481,51 @@
 <!-- ── Ideas ── -->
 <div id="ic-root">
   <div class="ic-grid">
-    <div class="ic-tile"
-         data-label="idea · 01" data-eyebrow="in progress"
-         data-title="Notes Flow" data-sub="Apple · draft"
-         data-body="Notes Flow is a weekly feature that dynamically assembles your existing content into a temporary, curated summary. By surfacing paragraphs from your notes based on prime-numbered sequences and thematic symmetry, the app creates a unified view of your thoughts that encourages review and refinement. This summary is ephemeral; if not addressed by the next weekly cycle, the Flow expires and archives, ensuring your workspace remains focused and current.
-Each paragraph within a flow and acts as a direct link to the original entry, enabling immediate editing and re-categorization. These modifications are reflected in the source notes in real-time, allowing you to iterate on your ideas directly within the Flow view. When a new Flow is generated, you receive a notification styled as a collaboration alert. By treating the feature as an ongoing, iterative dialogue between your past entries and your current perspective, Notes Flow brings your notes to the forefront of your workflow, turning a static archive into an active, growing resource."
-         data-image="">
+
+    <!-- Notes Flow tile -->
+    <div class="ic-tile" id="ic-tile-01"
+         data-eyebrow="in progress" data-title="Notes' Flow"
+         data-sub="apple · draft"
+         data-body="Notes' Flow converts an archive of information into a live, evolving tool. Appearing as a collaboration alert, a Flow Note compiles an evolving workspace
+by shared calendar event, overlapping active editing sessions, or identical links. Every paragraph is a living link - you can edit, refine, or re-categorize thoughts directly within the Flow. Like weekly playlists, these flows last one cycle at a time - finish your note, get back to your workflow.">
+      <canvas id="nf-tile-canvas" width="220" height="220" style="position:absolute;inset:0;pointer-events:none;"></canvas>
       <div class="ic-tile-label">idea · 01</div>
     </div>
-    <div class="ic-tile"
-         data-label="idea · 02" data-eyebrow="ongoing"
-         data-title="Resonance" data-sub="design · quiet interfaces"
-         data-body="Resonance is a lock-screen interface that visualizes the alignment between your biological rhythms and your digital activity. Designed as an interactive, generative artifact, it uses on-device data—such as heart rate variability and movement cadence—to create a visual representation of your current state. When your system detects fragmentation in your workflow, Resonance provides a calm, centered focal point that encourages you to sync your internal tempo with your surroundings. Interaction is designed for composure and comfort. Through subtle, fluid animations and responsive haptics, you can engage with the artifact directly on your Lock Screen. Touching the display allows the visual elements to naturally "lock" into a unified, rhythmic motion. This process of mutual phase locking creates a tactile feedback loop, serving as a gentle prompt to slow your breathing, ground your focus, and achieve a state of synchronized productivity. By bringing this alignment to the Lock Screen, Resonance turns your device into an anchor for mindfulness. It removes the friction of opening an app or navigating a menu, instead offering an immediate, physical-feeling object that exists at the periphery of your digital workspace. It is a system-level tool for comfort."
-         data-image="">
+
+    <!-- Resonance tile -->
+    <div class="ic-tile resonance-tile" id="ic-tile-02"
+         data-eyebrow="ongoing" data-title="Resonance"
+         data-sub="design · quiet interfaces"
+         data-body=" Resonance elevates your Lock Screen into a generative and calming digital rhythm. Using heart-rate variability and movement pace, it provides an element of a calm-center. The interface responds with haptic/ ambient feedback to engage and 'phase-lock' by tap-calibration. The feedback loop is a reminder to breathe deeply and center. Resonance is an intuitive, peripheral experience.">
+      <canvas id="resonance-canvas" width="220" height="220"></canvas>
       <div class="ic-tile-label">idea · 02</div>
     </div>
+
   </div>
+
+  <!-- Shared stage (one per idea, reused) -->
   <div class="ic-stage" id="ic-stage">
-    <div class="ic-card" id="ic-card">
-      <div class="ic-eyebrow" id="ic-eyebrow"></div>
-      <h2 class="ic-title" id="ic-title"></h2>
-      <div class="ic-sub" id="ic-sub"></div>
-      <img class="ic-image" id="ic-image" alt="" style="display:none;"/>
-      <p class="ic-body" id="ic-body"></p>
+    <div class="ic-flip-scene" id="ic-flip-scene">
+      <div class="ic-flip-inner" id="ic-flip-inner">
+
+        <!-- Front face: interactive canvas -->
+        <div class="ic-face ic-face-front" id="ic-face-front">
+          <canvas id="ic-stage-canvas" width="360" height="360" style="cursor:crosshair;"></canvas>
+          <div class="ic-state-label" id="ic-state-label">Fragmented</div>
+          <div class="ic-interaction-hint" id="ic-interaction-hint">click to synchronise</div>
+          <!-- Description overlay: fades in when Sustained Flow is reached -->
+          <div class="ic-desc-overlay" id="ic-desc-overlay">
+            <div class="ic-back-eyebrow" id="ic-back-eyebrow"></div>
+            <h2 class="ic-back-title" id="ic-back-title"></h2>
+            <div class="ic-back-sub" id="ic-back-sub"></div>
+            <div class="ic-back-divider"></div>
+            <p class="ic-back-body" id="ic-back-body"></p>
+          </div>
+        </div>
+
+      </div>
     </div>
-    <div class="ic-hint">click outside to leave · esc</div>
+    <div class="ic-hint">click outside · esc</div>
   </div>
 </div>
 
@@ -454,22 +553,24 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
 
   function init() {
     // ── grain configuration ──────────────────────────────────────
-    const CELL_PX       = 5.5;   // was 4.5 — ~33% fewer grains
+    const CELL_PX       = 5.5;
     const SETTLE_JITTER = 0.7;
-    const GRAIN_HALF    = 1.1;   // half-width of square grain in px (replaces arc radius)
+    const GRAIN_HALF    = 1.1;
 
     // ── physics ──────────────────────────────────────────────────
     const ATTRACT_RADIUS   = 140;
     const ATTRACT_STRENGTH = 0.038;
-    const SETTLE_RATE      = 0.14;
-    const VELOCITY_DAMPING = 0.93;
-    const MAX_DISPLACEMENT = 24;
+    const SETTLE_RATE      = 0.055;  // was 0.14 — slower spring = grains hang longer
+    const VELOCITY_DAMPING = 0.97;   // was 0.93 — less friction = wave travels further
+    const MAX_DISPLACEMENT = 55;     // was 24 — grains can travel much further
 
-    const REVERB_KICK_VELOCITY = 2.6;
-    const REVERB_KICK_RADIUS   = 160;
+    // Kick: wider radius so the ripple crosses the full viewport,
+    // higher velocity so distant grains get a real push.
+    const REVERB_KICK_VELOCITY = 4.2;   // was 2.6
+    const REVERB_KICK_RADIUS   = 420;   // was 160 — now reaches across most screens
 
-    const SHOVE_RADIUS    = 60;
-    const SHOVE_STRENGTH  = 0.085;
+    const SHOVE_RADIUS    = 80;      // was 60 — slightly wider wake
+    const SHOVE_STRENGTH  = 0.07;
     const SHOVE_MIN_SPEED = 0.02;
 
     // ── press-gather (hold mouse/touch to pull grains in) ────────
@@ -479,10 +580,10 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
     // On release, a dispersal kick fires outward (negative polarity
     // applied to the normal kick, so grains scatter away from where
     // you lifted rather than toward it).
-    const GATHER_RADIUS    = 220;
-    const GATHER_STRENGTH  = 0.11;
-    const DISPERSE_VELOCITY = 3.8;
-    const DISPERSE_RADIUS   = 200;
+    const GATHER_RADIUS     = 260;   // was 220
+    const GATHER_STRENGTH   = 0.11;
+    const DISPERSE_VELOCITY = 5.2;   // was 3.8 — bigger release burst
+    const DISPERSE_RADIUS   = 300;   // was 200
 
     // ── inversion ────────────────────────────────────────────────
     const INVERSION_LERP = 0.04;
@@ -570,15 +671,18 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
     // WAVE_COUNT concentric ripple rings — grains near the wavecrest
     // get a strong kick, grains between crests get a counter-kick,
     // producing the pond-ripple alternation rather than a uniform push.
-    const WAVE_COUNT = 2.5;   // number of concentric rings per kick
+    const WAVE_COUNT = 3.5;   // more rings across the wider radius
     function applyKick(x, y) {
       for (let i = 0; i < grains.length; i++) {
         const g = grains[i];
         const dx = x - g.x, dy = y - g.y;
         const dist = Math.hypot(dx, dy);
         if (dist < 0.5 || dist > REVERB_KICK_RADIUS) continue;
-        const tNorm = dist / REVERB_KICK_RADIUS;          // 0 (near) → 1 (far)
-        const envelope = (1 - tNorm) * (1 - tNorm);       // fade out at edge
+        const tNorm    = dist / REVERB_KICK_RADIUS;     // 0 (near) → 1 (far)
+        // Linear envelope (was quadratic) — distant grains get a real kick,
+        // not a vanishingly small one. The wave reads as a true ripple
+        // rather than a localised pulse.
+        const envelope = 1 - tNorm;
         const wave     = Math.sin(tNorm * Math.PI * WAVE_COUNT);
         const k = REVERB_KICK_VELOCITY * envelope * wave * polarity;
         g.vx += (dx / dist) * k;
@@ -631,8 +735,6 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
     }
 
     document.addEventListener("pointermove", (e) => {
-      // Ignore moves that originate from interactive UI elements so the
-      // field doesn't fight with tile hover states.
       if (e.target.closest && e.target.closest(
         "#nf-invert, #nf-home, .ow-tile, #ps-tile, .ic-tile, " +
         ".ow-stage, #ps-stage, .ic-stage"
@@ -650,7 +752,6 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
       if (source.pressed) { applyDisperse(source.x, source.y); source.pressed = false; }
     });
     document.addEventListener("pointerdown", (e) => {
-      // Don't start a field-press when clicking UI chrome or tiles.
       if (e.target.closest && e.target.closest(
         "#nf-invert, #nf-home, .ow-tile, #ps-tile, .ic-tile, " +
         ".ow-stage, #ps-stage, .ic-stage"
@@ -684,6 +785,13 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
         source.pressed = false;
       }
       if (source.active) { applyKick(source.x, source.y); source.active = false; }
+    });
+
+    // Reset source tracking whenever a stage opens so the field
+    // doesn't inherit stale velocity state when it resumes.
+    document.addEventListener("stageopen", () => {
+      source.active  = false;
+      source.pressed = false;
     });
 
     // ── stage-occlusion check ─────────────────────────────────────
@@ -879,15 +987,11 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
 
     const svg        = document.getElementById("ow-svg");
     const ship       = document.getElementById("ow-ship");
-    const thumb      = document.getElementById("ow-thumb");
-    const fireGroup  = document.getElementById("ow-fire-group");
-    const steerGroup = document.getElementById("ow-steer-group");
     const asteroidsG = document.getElementById("ow-asteroids");
     const shotsG     = document.getElementById("ow-shots");
     const depthRingsG= document.getElementById("ow-depth-rings");
     const portal     = document.getElementById("ow-portal");
     const levelEl    = document.getElementById("ow-level");
-    const remainingEl= document.getElementById("ow-remaining");
     const banner     = document.getElementById("ow-banner");
     const bannerTitle= document.getElementById("ow-banner-title");
     const bannerSub  = document.getElementById("ow-banner-sub");
@@ -961,9 +1065,46 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
     let depthRings = [];
     for (let i = 0; i < DEPTH_RING_COUNT; i++) depthRings.push(200 + i * DEPTH_RING_SPACE);
     let lastTs = 0, lastFireTs = 0;
-    let steerActive = false, steerPointerId = null;
-    let steerFrac = { x: 0, y: 0 };
-    const keys = { up:false, down:false, left:false, right:false };
+    // Cursor angle: updated continuously from pointermove over the SVG.
+    // The ship's angle snaps to wherever the cursor points relative to
+    // the tunnel center — no separate joystick zone needed.
+    let cursorAngle = Math.PI / 2;   // start at bottom (matches shipAngle default)
+    let cursorOnSvg = false;         // true while pointer is inside the SVG
+    const keys = { left:false, right:false };
+
+    // Map a client-space pointer position to an angle around the tunnel center.
+    function clientToAngle(clientX, clientY) {
+      const rect = svg.getBoundingClientRect();
+      const sc   = Math.min(rect.width / VB_W, rect.height / VB_H);
+      const ox   = (rect.width  - VB_W * sc) / 2;
+      const oy   = (rect.height - VB_H * sc) / 2;
+      const vx   = (clientX - rect.left - ox) / sc;
+      const vy   = (clientY - rect.top  - oy) / sc;
+      return Math.atan2(vy - CY, vx - CX);
+    }
+
+    // ── SVG pointer handlers: steer + fire on the same surface ────
+    svg.addEventListener("pointermove", (e) => {
+      cursorOnSvg = true;
+      cursorAngle = clientToAngle(e.clientX, e.clientY);
+      if (gameState === "playing") shipAngle = cursorAngle;
+    });
+    svg.addEventListener("pointerleave", () => { cursorOnSvg = false; });
+    svg.addEventListener("pointerenter", (e) => {
+      cursorOnSvg = true;
+      cursorAngle = clientToAngle(e.clientX, e.clientY);
+    });
+    // Click/tap anywhere on SVG: fire when playing, start when idle/crashed
+    svg.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      cursorAngle = clientToAngle(e.clientX, e.clientY);
+      if (gameState === "playing") {
+        shipAngle = cursorAngle;
+        tryFire();
+      } else {
+        handleSpaceOrFire();
+      }
+    });
 
     function project(x, y, z) {
       const scale = FOCAL / (FOCAL + Math.max(z, 0.1));
@@ -975,46 +1116,7 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
       };
     }
 
-    function screenToVB(clientX, clientY) {
-      const rect = svg.getBoundingClientRect();
-      const sc   = Math.min(rect.width / VB_W, rect.height / VB_H);
-      const ox   = (rect.width  - VB_W * sc) / 2;
-      const oy   = (rect.height - VB_H * sc) / 2;
-      return { x: (clientX - rect.left - ox) / sc, y: (clientY - rect.top - oy) / sc };
-    }
-
-    function setSteerFromPointer(cx, cy) {
-      const pt = screenToVB(cx, cy);
-      const dx = pt.x - 870, dy = pt.y - 500;
-      const dist = Math.hypot(dx, dy);
-      let nx, ny;
-      if (dist > 70) { nx = (dx/dist)*70; ny = (dy/dist)*70; }
-      else           { nx = dx; ny = dy; }
-      thumb.setAttribute("cx", 870 + nx);
-      thumb.setAttribute("cy", 500 + ny);
-      thumb.setAttribute("opacity", "1");
-      steerFrac.x = nx / 70; steerFrac.y = ny / 70;
-    }
-
-    steerGroup.addEventListener("pointerdown", (e) => {
-      e.preventDefault(); steerActive = true; steerPointerId = e.pointerId;
-      try { steerGroup.setPointerCapture(e.pointerId); } catch(_){}
-      setSteerFromPointer(e.clientX, e.clientY);
-    });
-    steerGroup.addEventListener("pointermove", (e) => {
-      if (!steerActive || e.pointerId !== steerPointerId) return;
-      e.preventDefault(); setSteerFromPointer(e.clientX, e.clientY);
-    });
-    function steerUp(e) {
-      if (e.pointerId !== steerPointerId) return;
-      steerActive = false; steerPointerId = null; steerFrac.x = 0; steerFrac.y = 0;
-      thumb.setAttribute("opacity","0");
-      try { steerGroup.releasePointerCapture(e.pointerId); } catch(_){}
-    }
-    steerGroup.addEventListener("pointerup",         steerUp);
-    steerGroup.addEventListener("pointercancel",     steerUp);
-    steerGroup.addEventListener("lostpointercapture",steerUp);
-
+    // Arrow keys: left/right only (up/down removed — cursor controls angle now).
     document.addEventListener("keydown", (e) => {
       if (!stageOpen) return;
       if (e.repeat) {
@@ -1022,8 +1124,6 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
         return;
       }
       switch (e.code) {
-        case "ArrowUp":  case "KeyW": keys.up    = true; e.preventDefault(); break;
-        case "ArrowDown":case "KeyS": keys.down  = true; e.preventDefault(); break;
         case "ArrowLeft":case "KeyA": keys.left  = true; e.preventDefault(); break;
         case "ArrowRight":case "KeyD":keys.right = true; e.preventDefault(); break;
         case "Space":    handleSpaceOrFire(); e.preventDefault(); break;
@@ -1033,8 +1133,6 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
     document.addEventListener("keyup", (e) => {
       if (!stageOpen) return;
       switch (e.code) {
-        case "ArrowUp":  case "KeyW": keys.up    = false; break;
-        case "ArrowDown":case "KeyS": keys.down  = false; break;
         case "ArrowLeft":case "KeyA": keys.left  = false; break;
         case "ArrowRight":case "KeyD":keys.right = false; break;
       }
@@ -1049,19 +1147,16 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
       const sy = CY + SHIP_RIM_R * Math.sin(shipAngle);
       shots.push({ id: nextShotId++, x: sx, y: sy, z: 0, vz: SHOT_INWARD_SPEED });
       ripples.push({ t0: now });
-      fireGroup.firstElementChild.setAttribute("stroke-width","2");
-      setTimeout(() => fireGroup.firstElementChild.setAttribute("stroke-width","1"), 90);
     }
 
     function handleSpaceOrFire() {
       switch (gameState) {
-        case "idle":    startGame();   break;
-        case "playing": tryFire();     break;
-        case "crashed": restartLevel();break;
-        case "won":     levelIdx = 0; restartLevel(); break;
+        case "idle":    startGame();                        break;
+        case "playing": tryFire();                          break;
+        case "crashed": restartLevel();                     break;
+        case "won":     levelIdx = 0; startGame();          break;
       }
     }
-    fireGroup.addEventListener("pointerdown", (e) => { e.preventDefault(); handleSpaceOrFire(); });
 
     function spawnLevel(count) {
       asteroids = []; shots = []; portalArrived = false; levelElapsed = 0;
@@ -1106,6 +1201,9 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
         el.setAttribute("cy", p.sy.toFixed(1));
         el.setAttribute("r",  r.toFixed(1));
         el.setAttribute("stroke-width", (1.2 * Math.max(0.4, p.scale)).toFixed(2));
+        // Depth opacity: faint when far, full when close
+        const depthT = Math.max(0, Math.min(1, 1 - a.z / FAR_Z));
+        el.setAttribute("opacity", (0.15 + 0.85 * depthT * depthT).toFixed(3));
         el.removeAttribute("display");
       }
       // Hide unused pool elements
@@ -1169,6 +1267,8 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
 
     function renderPortal() {
       const now = performance.now();
+      const allClear = asteroids.length > 0 && asteroids.every(a => !a.alive);
+
       let portalZ;
       if (portalArrived) portalZ = 0;
       else {
@@ -1176,15 +1276,22 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
         portalZ = Math.max(aliveZs.length ? Math.max(...aliveZs) + 250 : 250, 120);
       }
       const p   = project(CX, CY, portalZ);
-      const pls = 1 + Math.sin(now * 2 * Math.PI * PORTAL_PULSE_HZ) * PORTAL_PULSE_AMP;
-      let r     = Math.max(60 * p.scale * pls, 4);
-      const sk  = now - lastKillTs;
+
+      // When all clear: portal pulses faster and more deeply as a destination cue.
+      const pulseHz  = allClear ? PORTAL_PULSE_HZ * 3   : PORTAL_PULSE_HZ;
+      const pulseAmp = allClear ? PORTAL_PULSE_AMP * 3  : PORTAL_PULSE_AMP;
+      const pls = 1 + Math.sin(now * 2 * Math.PI * pulseHz) * pulseAmp;
+      let r = Math.max(60 * p.scale * pls, 4);
+
+      const sk = now - lastKillTs;
       const flash = Math.max(0, 1 - sk / KILL_FLASH_MS);
       if (gameState === "crashing" && collapse) {
         const age = Math.min(1, (now - collapse.startTs) / COLLAPSE_MS);
         r *= 1 + age * 1.4;
       }
-      const sw = portalArrived ? 2 : 1.4;
+
+      // Stroke weight: thin when dormant, heavier when active destination.
+      const sw = portalArrived ? 2.5 : allClear ? 2.2 : 1.4;
       const ghalf = 0.32;
       const sa = -Math.PI/2 + ghalf, ea = -Math.PI/2 - ghalf + Math.PI*2;
       const x1 = p.sx + r * Math.cos(sa), y1 = p.sy + r * Math.sin(sa);
@@ -1198,13 +1305,29 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
         portalTick.setAttribute("stroke-width", sw.toFixed(2));
         portalTick.removeAttribute("display");
       } else { portalTick.setAttribute("display","none"); }
-      const baseOp = portalArrived ? 1 : 0.55;
+
+      // Opacity: faint during combat, full when clear, flash on kill.
+      const baseOp = portalArrived ? 1 : allClear ? 1 : 0.35;
       portal.setAttribute("opacity", Math.min(1, baseOp + flash * 0.4).toFixed(3));
     }
 
     function updateHUD() {
-      levelEl.textContent    = levelIdx + 1;
-      remainingEl.textContent = asteroids.filter(a => a.alive).length;
+      levelEl.textContent = levelIdx + 1;
+      // Render remaining asteroids as pip dots — glanceable without reading a number.
+      const pipsEl = document.getElementById("ow-pips");
+      if (pipsEl) {
+        const alive = asteroids.filter(a => a.alive).length;
+        // Rebuild only when count changes to avoid thrashing the DOM every frame.
+        if (parseInt(pipsEl.dataset.count || "-1") !== alive) {
+          pipsEl.dataset.count = alive;
+          pipsEl.innerHTML = "";
+          for (let i = 0; i < alive; i++) {
+            const dot = document.createElement("span");
+            dot.className = "ow-pip";
+            pipsEl.appendChild(dot);
+          }
+        }
+      }
     }
 
     // ── game loop ─────────────────────────────────────────────────
@@ -1226,18 +1349,14 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
           if (depthRings[i] < 0) depthRings[i] = Math.max(...depthRings) + DEPTH_RING_SPACE;
         }
 
-        if (steerActive) {
-          const mag = Math.hypot(steerFrac.x, steerFrac.y);
-          if (mag > 0.06) shipAngle = Math.atan2(steerFrac.y, steerFrac.x);
+        // Steering: cursor position drives ship angle directly.
+        // Arrow keys rotate when cursor isn't on the SVG (keyboard fallback).
+        if (cursorOnSvg) {
+          shipAngle = cursorAngle;
         } else {
           let dAngle = 0;
           if (keys.left)  dAngle -= 1;
           if (keys.right) dAngle += 1;
-          if (keys.up || keys.down) {
-            const ta = keys.up ? -Math.PI/2 : Math.PI/2;
-            const diff = ((ta - shipAngle + Math.PI) % (2*Math.PI)) - Math.PI;
-            dAngle += Math.sign(diff) * 0.5;
-          }
           shipAngle += dAngle * KEY_STEER_SPEED * dt;
         }
 
@@ -1310,8 +1429,11 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
         bestLevel = c.levelAtCrash;
         try { localStorage.setItem("ow-best-level", String(bestLevel)); } catch(_){}
       }
-      const bestStr = bestLevel > 0 ? ` · best · ${bestLevel+1}` : "";
-      showBanner("you collided", `level ${c.levelAtCrash+1} · ${cleared} of ${total} cleared${bestStr}`, "try again · space", () => restartLevel());
+      // Win: you lost, show what was cleared and offer retry
+      const sub = cleared === total
+        ? `level ${c.levelAtCrash + 1} · all cleared — hit on approach`
+        : `level ${c.levelAtCrash + 1} · ${cleared} of ${total} cleared`;
+      showBanner("collision", sub, "try again", () => restartLevel());
       collapse = null;
     }
     function restartLevel() {
@@ -1322,19 +1444,34 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
     }
     function advanceLevel() {
       if (levelIdx >= bestLevel) {
-        bestLevel = Math.min(LEVELS.length-1, levelIdx+1);
+        bestLevel = Math.min(LEVELS.length - 1, levelIdx + 1);
         try { localStorage.setItem("ow-best-level", String(bestLevel)); } catch(_){}
       }
       levelIdx++;
       if (levelIdx >= LEVELS.length) {
         gameState = "won"; bestLevel = LEVELS.length;
         try { localStorage.setItem("ow-best-level", String(bestLevel)); } catch(_){}
-        showBanner("you reached outward.", "all eight levels cleared · press space to play again", "play again · space", () => { levelIdx=0; restartLevel(); });
+        showBanner("outward reached", "all eight levels cleared", "play again", () => { levelIdx = 0; restartLevel(); });
         return;
       }
-      gameState = "playing"; shipAngle = Math.PI/2; ripples = [];
-      warpX = warpY = warpTargetX = warpTargetY = 0; lastTs = 0;
-      spawnLevel(LEVELS[levelIdx]);
+      // Show a brief level-clear banner, then auto-advance after 1.6s
+      // so the player sees what's coming without needing to click.
+      gameState = "idle";
+      const nextCount = LEVELS[levelIdx];
+      showBanner(
+        `level ${levelIdx + 1}`,
+        `${nextCount} ${nextCount === 1 ? "obstacle" : "obstacles"} ahead`,
+        "continue",
+        () => { hideBanner(); gameState = "playing"; shipAngle = Math.PI/2; ripples = []; warpX = warpY = 0; lastTs = 0; spawnLevel(LEVELS[levelIdx]); }
+      );
+      // Auto-dismiss after 1.6s if player doesn't click
+      setTimeout(() => {
+        if (gameState === "idle" && stageOpen) {
+          hideBanner(); gameState = "playing"; shipAngle = Math.PI/2;
+          ripples = []; warpX = warpY = 0; lastTs = 0;
+          spawnLevel(LEVELS[levelIdx]);
+        }
+      }, 1600);
     }
 
     function showBanner(title, sub, btnLabel, btnAction) {
@@ -1348,27 +1485,52 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
     const stage = document.getElementById("ow-stage");
 
     function openStage() {
-      if (stageOpen) return; stageOpen = true; stage.classList.add("open");
-      gameState = "idle"; levelIdx = 0; ripples = [];
-      warpX = warpY = warpTargetX = warpTargetY = 0; shipAngle = Math.PI/2; lastTs = 0;
+      if (stageOpen) return;
+      stageOpen = true;
+      stage.classList.add("open");
+
+      // Resume seamlessly if a game is already running or just crashed.
+      // Only show the welcome banner on a genuinely fresh open.
+      if (gameState === "playing" || gameState === "crashing") {
+        // Already mid-game — just reveal the stage, game continues.
+        return;
+      }
+      if (gameState === "crashed") {
+        // Show the crash result again so the player can restart.
+        // (banner is already showing from finishCrash)
+        return;
+      }
+
+      // Fresh open or post-win: reset and show welcome.
+      levelIdx = 0; ripples = [];
+      warpX = warpY = warpTargetX = warpTargetY = 0;
+      shipAngle = Math.PI/2; lastTs = 0;
       spawnLevel(LEVELS[0]);
       const bestStr = bestLevel >= LEVELS.length
-        ? "complete · press space or tap fire to play again"
-        : bestLevel > 0 ? `best · level ${bestLevel+1} · press space or tap fire to begin` : "press space or tap fire to begin";
-      showBanner("outward", bestStr, "begin · space", () => startGame());
+        ? "complete · play again?"
+        : bestLevel > 0
+          ? `reached level ${bestLevel + 1} last time`
+          : "clear the tunnel · reach the portal";
+      showBanner(
+        "outward",
+        bestStr,
+        "begin",
+        () => startGame()
+      );
     }
+
     function closeStage() {
-      if (!stageOpen) return; stageOpen = false; stage.classList.remove("open");
-      hideBanner(); gameState = "idle";
-      keys.up = keys.down = keys.left = keys.right = false;
-      steerActive = false; steerFrac.x = 0; steerFrac.y = 0;
-      thumb.setAttribute("opacity","0");
+      if (!stageOpen) return;
+      stageOpen = false;
+      stage.classList.remove("open");
+      // Do NOT reset gameState — preserve it so reopening resumes.
+      keys.left = keys.right = false;
+      cursorOnSvg = false;
     }
 
     tile.addEventListener("click", openStage);
     const SAFE_RADIUS_OW = 440;
     stage.addEventListener("click", (e) => {
-      if (e.target.closest("#ow-fire-group, #ow-steer-group, #ow-banner")) return;
       if (banner.classList.contains("show") && banner.contains(e.target)) return;
       const svgEl = document.getElementById("ow-svg");
       if (!svgEl) return;
@@ -1389,7 +1551,7 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
     }, { passive: true });
 
     requestAnimationFrame(tick);
-  }
+  }  // end init
 })();
 </script>
 
@@ -1679,48 +1841,458 @@ Each paragraph within a flow and acts as a direct link to the original entry, en
 })();
 </script>
 
+
 <!-- ═══════════════════════════════════════════════════════════════
-     IDEAS — unchanged (no RAF, pure event-driven)
+     IDEAS + RESONANCE — unified script
      ═══════════════════════════════════════════════════════════════ -->
 <script>
 (function () {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
+
+  // ── Coherence ─────────────────────────────────────────────────────
+  // 0 = fully fragmented, 1 = sustained flow.
+  // Click (not hold) increments it in steps; it decays slowly when idle.
+  let coherence   = 0.0;
+  let breathPhase = 0.0;
+  let flashAmt    = 0.0;
+  let lastFlashIdx = -1;
+  let autoFlipFired = false;    // only auto-flip once per open
+
+  const CLICK_INCREMENT  = 0.14;   // each click nudges coherence up
+  const DECAY_RATE       = 0.022;  // per second when idle
+  const FLASH_THRESHOLDS = [0.25, 0.50, 0.75, 1.0];
+  const STATES = [
+    { min: 0.00, label: 'Fragmented',     cls: ''          },
+    { min: 0.25, label: 'Coupling',       cls: 'coupling'  },
+    { min: 0.55, label: 'Resonance',      cls: 'resonance' },
+    { min: 0.85, label: 'Sustained Flow', cls: 'flow'      },
+  ];
+
+  function getState(c) {
+    let s = STATES[0];
+    for (const st of STATES) { if (c >= st.min) s = st; }
+    return s;
   }
-  function init() {
-    const root  = document.getElementById("ic-root");
-    const stage = document.getElementById("ic-stage");
-    const card  = document.getElementById("ic-card");
-    const tiles = Array.from(root.querySelectorAll(".ic-tile"));
-    const elEyebrow = document.getElementById("ic-eyebrow");
-    const elTitle   = document.getElementById("ic-title");
-    const elSub     = document.getElementById("ic-sub");
-    const elBody    = document.getElementById("ic-body");
-    const elImage   = document.getElementById("ic-image");
-    let stageOpen = false;
-    function hydrate(tile) {
-      const d = tile.dataset;
-      elEyebrow.textContent = d.eyebrow || "";
-      elTitle.textContent   = d.title   || "";
-      elSub.textContent     = d.sub     || "";
-      elBody.textContent    = d.body    || "";
-      if (d.image && d.image.trim() !== "") { elImage.src = d.image; elImage.style.display = "block"; }
-      else { elImage.removeAttribute("src"); elImage.style.display = "none"; }
+
+  // ── Resonance biological animation ───────────────────────────────
+  //
+  // Three layered rhythms:
+  //   BREATH  — 10s cycle (5–6 breaths/min), drives core and, at high
+  //             coherence, the whole network inhaling/exhaling together.
+  //   HEART   — ~1Hz per node, each with its own slightly different rate.
+  //             As coherence rises they entrain to the same beat.
+  //   ORBIT   — slow rotation, phase-locks as coherence rises.
+  //
+  // Tap/click: bumps coherence AND injects a phase-correction impulse
+  // that snaps all node phases toward the shared frequency — the
+  // "metronome tap" that pulls drifting musicians into time.
+  //
+  // Lock-in wave: at Sustained Flow, a radial pulse propagates outward
+  // from the core through the nodes in sequence, like fireflies syncing.
+
+  const BREATH_PERIOD  = 10.0;    // seconds (5–6 breaths/min)
+  const HEART_BASE     = 1.05;    // Hz, shared heartbeat frequency
+  const HEART_SPREAD   = 0.18;    // ± individual variation at c=0
+  const N_NODES        = 8;
+  const ORBIT_SPEED    = 0.28;    // rad/s shared rotation
+
+  // Per-node own heartbeat frequency (fixed, derived from index)
+  const nodeOwnHz = Array.from({ length: N_NODES }, (_, i) =>
+    HEART_BASE + (i / (N_NODES - 1) - 0.5) * 2 * HEART_SPREAD
+  );
+
+  // Phase-correction state: how much each node's accumulated phase
+  // has been nudged toward the shared phase by taps.
+  // Starts at 0 (no correction); each tap adds a correction impulse.
+  let nodePhaseCorrection = new Array(N_NODES).fill(0);
+  let lockWave = 0;   // 0..1 lock-in wave progress, fires at Sustained Flow
+
+  function tapCorrect() {
+    // Each tap injects a phase-reset nudge on all nodes proportional
+    // to how far each is from the shared phase. The further a node is
+    // from sync, the harder it gets pulled. This makes taps feel like
+    // a stabilising hand rather than a binary toggle.
+    for (let i = 0; i < N_NODES; i++) {
+      nodePhaseCorrection[i] = Math.min(1, nodePhaseCorrection[i] + 0.22);
     }
-    function openStage(tile) { if (stageOpen) return; stageOpen = true; hydrate(tile); stage.classList.add("open"); }
-    function closeStage() { if (!stageOpen) return; stageOpen = false; stage.classList.remove("open"); }
-    tiles.forEach(tile => tile.addEventListener("click", () => openStage(tile)));
-    stage.addEventListener("click", (e) => { if (!card.contains(e.target)) closeStage(); });
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && stageOpen) closeStage(); });
-    let scrollTimer = null;
-    window.addEventListener("scroll", () => {
-      if (!stageOpen) return;
-      if (scrollTimer) clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => { const rect = root.getBoundingClientRect(); if (rect.bottom < 0 || rect.top > window.innerHeight) closeStage(); }, 80);
-    }, { passive: true });
   }
+
+  function drawResonance(ctx, cx, cy, R, c, t, breath, flash) {
+    ctx.clearRect(0, 0, cx * 2, cy * 2);
+
+    // ── Breath ──────────────────────────────────────────────────────
+    // Slow 10s sine: 0 = exhale, 1 = inhale
+    const breathCycle = Math.PI * 2 / BREATH_PERIOD;
+    const breathVal   = Math.sin(t * breathCycle) * 0.5 + 0.5;   // 0..1
+
+    // ── Ambient radial field — grows with coherence and breath ──────
+    const fieldAlpha = 0.02 + c * 0.07 + breathVal * c * 0.04;
+    const bg = ctx.createRadialGradient(cx, cy, 2, cx, cy, R * 0.95);
+    bg.addColorStop(0, `rgba(26,26,26,${fieldAlpha.toFixed(3)})`);
+    bg.addColorStop(1, 'rgba(26,26,26,0)');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, cx * 2, cy * 2);
+
+    // ── Rings — stabilise and breathe together at high coherence ────
+    for (let ri = 0; ri < 4; ri++) {
+      const base = R * (0.22 + ri * 0.18);
+      // Independent wobble decays; at high c the ring breathes with core
+      const indWobble  = Math.sin(t * (0.8 - c * 0.4) + ri * 1.4) * 4 * (1 - c);
+      const breathSync = Math.sin(t * breathCycle + ri * 0.2) * R * 0.018 * c;
+      const alpha = 0.04 + c * 0.12 + breathVal * c * 0.06;
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(26,26,26,${alpha.toFixed(3)})`;
+      ctx.lineWidth   = 0.6 + c * 0.5;
+      ctx.arc(cx, cy, base + indWobble + breathSync, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // ── Flash ring (threshold crossing) ─────────────────────────────
+    if (flash > 0) {
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(26,26,26,${(flash * 0.45).toFixed(3)})`;
+      ctx.lineWidth   = 1 + flash * 2.5;
+      ctx.arc(cx, cy, R * 0.48 + flash * R * 0.12, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // ── Lock-in wave: radial firefly propagation ─────────────────────
+    // When lockWave > 0, a bright pulse sweeps outward from core
+    // through each node in sequence, indexed by angular position.
+    // Each node's flash delay = its angle / (2π).
+    const lockNodeFlash = new Array(N_NODES).fill(0);
+    if (lockWave > 0) {
+      // Draw the propagating ring
+      const waveR = R * 0.15 + lockWave * R * 0.85;
+      const waveAlpha = Math.max(0, (1 - lockWave) * 0.5);
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(26,26,26,${waveAlpha.toFixed(3)})`;
+      ctx.lineWidth   = 2 + (1 - lockWave) * 3;
+      ctx.arc(cx, cy, waveR, 0, Math.PI * 2);
+      ctx.stroke();
+      // Calculate per-node flash based on wave proximity
+      for (let i = 0; i < N_NODES; i++) {
+        const nodeDelay  = i / N_NODES;   // 0..1, angular order
+        const waveFront  = lockWave;
+        const dist       = Math.abs(waveFront - nodeDelay);
+        lockNodeFlash[i] = Math.max(0, 1 - dist * N_NODES * 1.2);
+      }
+    }
+
+    // ── Nodes ────────────────────────────────────────────────────────
+    const sharedHeart = HEART_BASE;
+    const sharedPhase = t * sharedHeart * Math.PI * 2;   // common beat clock
+    const baseOrbit   = t * ORBIT_SPEED;
+
+    for (let i = 0; i < N_NODES; i++) {
+      const a = i * Math.PI * 2 / N_NODES;
+
+      // Individual heartbeat — frequency entrained toward shared as c rises
+      const ownHz  = nodeOwnHz[i];
+      const hz     = ownHz * (1 - c) + sharedHeart * c;
+      const rawPhase = t * hz * Math.PI * 2;
+
+      // Phase correction from taps: pulls rawPhase toward sharedPhase
+      const phaseDiff = sharedPhase - rawPhase;
+      const corrected = rawPhase + phaseDiff * nodePhaseCorrection[i];
+      const heartbeat = Math.sin(corrected) * 0.5 + 0.5;   // 0..1
+
+      // Decay correction toward 0 (correction wears off without taps)
+      nodePhaseCorrection[i] = Math.max(0, nodePhaseCorrection[i] - 0.0004);
+
+      // Orbit: independent at c=0, unified at c=1
+      const ownOrbit   = t * (0.18 + i * 0.025);
+      const orbitAngle = a + ownOrbit * (1 - c) + baseOrbit * c;
+
+      // Radial scatter collapses; at high c nodes breathe radially together
+      const scatter    = R * 0.10 * (1 - c);
+      const breathSync = Math.sin(t * breathCycle + i * 0.1) * R * 0.028 * c;
+      const orbitR     = R * 0.50
+                       + Math.sin(rawPhase * 0.5 + i) * scatter
+                       + breathSync;
+
+      const nx = cx + Math.cos(orbitAngle) * orbitR;
+      const ny = cy + Math.sin(orbitAngle) * orbitR;
+
+      // Connection lines: more visible as c rises, pulse with heartbeat
+      const lineAlpha = 0.06 + c * 0.22 + heartbeat * c * 0.08;
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(26,26,26,${lineAlpha.toFixed(3)})`;
+      ctx.lineWidth   = 0.5 + c * 0.7 + heartbeat * c * 0.3;
+      ctx.moveTo(cx, cy); ctx.lineTo(nx, ny); ctx.stroke();
+
+      // Node-to-next connection at high coherence (unified ring)
+      if (c > 0.55) {
+        const nextA   = (i + 1) * Math.PI * 2 / N_NODES;
+        const nextOrbit = a + (nextA - a) + ownOrbit * (1 - c) + baseOrbit * c;
+        const nx2 = cx + Math.cos(nextOrbit + (2 * Math.PI / N_NODES)) * orbitR;
+        const ny2 = cy + Math.sin(nextOrbit + (2 * Math.PI / N_NODES)) * orbitR;
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(26,26,26,${((c - 0.55) * 0.35).toFixed(3)})`;
+        ctx.lineWidth   = 0.5;
+        ctx.moveTo(nx, ny); ctx.lineTo(nx2, ny2); ctx.stroke();
+      }
+
+      // Node dot: pulses with heartbeat, flashes with lock-in wave
+      const flash2  = lockNodeFlash[i];
+      const dotBase = R * 0.022;
+      const dotPulse = dotBase * (1 + heartbeat * (0.3 + c * 0.4));
+      const dotR    = dotPulse + flash2 * dotBase * 2;
+      const dotAlpha = 0.28 + c * 0.55 + heartbeat * c * 0.12 + flash2 * 0.4;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(26,26,26,${Math.min(0.98, dotAlpha).toFixed(3)})`;
+      ctx.arc(nx, ny, dotR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // ── Core: breathes at 5–6/min; grows and stabilises with coherence ──
+    // At high c the breath is deep and visible; at low c it's a faint flutter.
+    const breathDepth = 0.015 + c * 0.040;   // breath amplitude grows with c
+    const coreR = R * 0.052
+                + R * breathDepth * breathVal   // inhale expands the core
+                + R * 0.095 * c;               // grows with coherence
+
+    // Soft glow — larger and more luminous as c rises
+    const glowR = coreR * (2.5 + c * 1.5);
+    const glow  = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+    glow.addColorStop(0, `rgba(26,26,26,${(0.08 + c * 0.28 + breathVal * c * 0.10).toFixed(3)})`);
+    glow.addColorStop(1, 'rgba(26,26,26,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(cx, cy, glowR, 0, Math.PI * 2); ctx.fill();
+
+    // Solid core
+    const coreAlpha = 0.38 + c * 0.52 + breathVal * 0.06;
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(26,26,26,${Math.min(0.98, coreAlpha).toFixed(3)})`;
+    ctx.arc(cx, cy, coreR, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // ── Notes Flow tile animation ──────────────────────────────────────
+  const nfCanvas = document.getElementById('nf-tile-canvas');
+  let nfT = 0, nfLastTs = 0, nfRafId = null, nfRunning = true;
+  if (nfCanvas) {
+    const nfCtx = nfCanvas.getContext('2d');
+    if (typeof IntersectionObserver !== 'undefined') {
+      new IntersectionObserver(en => { nfRunning = en[0].isIntersecting; if (nfRunning && !nfRafId) nfRafId = requestAnimationFrame(nfFrame); }, { threshold: 0.1 }).observe(nfCanvas);
+    }
+    function nfFrame(ts) {
+      nfRafId = null; if (!nfRunning) return;
+      const dt = nfLastTs ? Math.min(50, ts - nfLastTs) / 1000 : 0.016;
+      nfLastTs = ts; nfT += dt;
+      nfCtx.clearRect(0, 0, 220, 220);
+      nfCtx.font = '8px ui-monospace,monospace';
+      nfCtx.fillStyle = 'rgba(26,26,26,0.26)';
+      nfCtx.fillText('IN PROGRESS', 18, 32);
+      nfCtx.font = '300 38px Spectral,Georgia,serif';
+      nfCtx.fillStyle = 'rgba(26,26,26,0.80)';
+      nfCtx.fillText('Notes', 18, 78); nfCtx.fillText('Flow', 18, 116);
+      const ls = [{ y:144,w:0.72,p:0.0 },{ y:156,w:0.55,p:0.4 },{ y:168,w:0.80,p:0.8 },{ y:180,w:0.45,p:1.2 },{ y:192,w:0.65,p:1.6 }];
+      for (const l of ls) { const pulse = 0.7 + Math.sin(nfT * 0.4 + l.p) * 0.3; nfCtx.fillStyle = `rgba(26,26,26,${(0.08 + pulse * 0.06).toFixed(3)})`; nfCtx.fillRect(18, l.y, (184 * l.w * pulse)|0, 1); }
+      nfRafId = requestAnimationFrame(nfFrame);
+    }
+    nfRafId = requestAnimationFrame(nfFrame);
+  }
+
+  // ── Resonance tile preview ─────────────────────────────────────────
+  const resTileCanvas = document.getElementById('resonance-canvas');
+  let resT = 0, resLastTs = 0, resRafId = null, resRunning = true;
+  if (resTileCanvas) {
+    const resCtx = resTileCanvas.getContext('2d');
+    if (typeof IntersectionObserver !== 'undefined') {
+      new IntersectionObserver(en => { resRunning = en[0].isIntersecting; if (resRunning && !resRafId) resRafId = requestAnimationFrame(resFrame); }, { threshold: 0.1 }).observe(resTileCanvas);
+    }
+    function resFrame(ts) {
+      resRafId = null; if (!resRunning) return;
+      const dt = resLastTs ? Math.min(50, ts - resLastTs) / 1000 : 0.016;
+      resLastTs = ts; resT += dt;
+      if (!stageOpen) coherence = Math.max(0, coherence - DECAY_RATE * dt * 0.1);
+      drawResonance(resCtx, 110, 110, 86, coherence, resT, resT, 0);
+      resRafId = requestAnimationFrame(resFrame);
+    }
+    resRafId = requestAnimationFrame(resFrame);
+  }
+
+  // ── Stage ──────────────────────────────────────────────────────────
+  const icStage    = document.getElementById('ic-stage');
+  const flipScene  = document.getElementById('ic-flip-scene');
+  const flipInner  = document.getElementById('ic-flip-inner');
+  const stageCanvas = document.getElementById('ic-stage-canvas');
+  const stateLabel  = document.getElementById('ic-state-label');
+  const interHint   = document.getElementById('ic-interaction-hint');
+  const backEyebrow = document.getElementById('ic-back-eyebrow');
+  const backTitle   = document.getElementById('ic-back-title');
+  const backSub     = document.getElementById('ic-back-sub');
+  const backBody    = document.getElementById('ic-back-body');
+  const descOverlay = document.getElementById('ic-desc-overlay');
+
+  let stageOpen    = false;
+  let stageRafId   = null;
+  let stageT       = 0;
+  let lastStageTs  = 0;
+  let activeTile   = null;
+  let lastStateCls = '';
+  let nfStageT     = 0, nfStageLastTs = 0;
+  let descRevealed = false;
+
+  const SC = 180, SR = 152;
+
+  function openStage(tile) {
+    if (stageOpen) return;
+    stageOpen    = true;
+    autoFlipFired = false;
+    descRevealed  = false;
+    activeTile    = tile.id === 'ic-tile-02' ? 'res' : 'nf';
+
+    const d = tile.dataset;
+    if (backEyebrow) backEyebrow.textContent = d.eyebrow || '';
+    if (backTitle)   backTitle.textContent   = d.title   || '';
+    if (backSub)     backSub.textContent     = d.sub     || '';
+    if (backBody)    backBody.textContent    = d.body    || '';
+    if (descOverlay) descOverlay.classList.remove('revealed');
+
+    if (stateLabel) stateLabel.style.display = activeTile === 'res' ? '' : 'none';
+    if (interHint)  interHint.style.display  = activeTile === 'res' ? '' : 'none';
+
+    updateStateLabel(coherence, true);
+    icStage.classList.add('open');
+    document.dispatchEvent(new Event('stageopen'));
+    stageT = resT; lastStageTs = 0; nfStageT = 0; nfStageLastTs = 0;
+    stageRafId = requestAnimationFrame(activeTile === 'res' ? resStageFrame : nfStageFrame);
+  }
+
+  function closeStage() {
+    if (!stageOpen) return;
+    stageOpen    = false;
+    descRevealed = false;
+    icStage.classList.remove('open');
+    if (descOverlay) descOverlay.classList.remove('revealed');
+    cancelAnimationFrame(stageRafId); stageRafId = null;
+  }
+
+  // Tile clicks
+  const tile01 = document.getElementById('ic-tile-01');
+  const tile02 = document.getElementById('ic-tile-02');
+  if (tile01) tile01.addEventListener('click', () => openStage(tile01));
+  if (tile02) tile02.addEventListener('click', () => openStage(tile02));
+
+  // ── Click-out: e.target === icStage means the click landed directly
+  // on the fixed fullscreen backdrop, not on any child element.
+  // The entire surrounding field is the exit zone — one clear target.
+  if (icStage) {
+    icStage.addEventListener('click', (e) => {
+      if (e.target === icStage) closeStage();
+    });
+  }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && stageOpen) closeStage(); });
+
+  let icScrollTimer = null;
+  window.addEventListener('scroll', () => {
+    if (!stageOpen) return;
+    if (icScrollTimer) clearTimeout(icScrollTimer);
+    icScrollTimer = setTimeout(() => {
+      const root = document.getElementById('ic-root');
+      if (!root) return;
+      const r = root.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) closeStage();
+    }, 80);
+  }, { passive: true });
+
+  // Canvas click: bump coherence AND inject phase-stabilisation impulse
+  if (stageCanvas) {
+    stageCanvas.addEventListener('click', (e) => {
+      if (activeTile !== 'res') return;
+      e.stopPropagation();
+      coherence = Math.min(1, coherence + CLICK_INCREMENT);
+      tapCorrect();   // snap nodes toward shared phase
+    });
+  }
+
+  function updateStateLabel(c, force) {
+    if (!stateLabel) return;
+    const s = getState(c);
+    if (force || s.cls !== lastStateCls) {
+      stateLabel.textContent = s.label;
+      stateLabel.className   = 'ic-state-label' + (s.cls ? ' ' + s.cls : '');
+      lastStateCls = s.cls;
+    }
+    const fi = FLASH_THRESHOLDS.findIndex(th => c >= th);
+    if (fi > lastFlashIdx) { lastFlashIdx = fi; flashAmt = 1.0; }
+    if (c < 0.18) lastFlashIdx = -1;
+  }
+
+  // ── Resonance stage loop ───────────────────────────────────────────
+  function resStageFrame(ts) {
+    stageRafId = null;
+    if (!stageOpen || activeTile !== 'res') return;
+    const dt = lastStageTs ? Math.min(50, ts - lastStageTs) / 1000 : 0.016;
+    lastStageTs = ts; stageT += dt;
+    // breathPhase no longer needed — breath is derived from stageT inside drawResonance
+    coherence = Math.max(0, coherence - DECAY_RATE * dt);
+    flashAmt  = Math.max(0, flashAmt  - dt * 2.0);
+
+    // Advance lock-in wave when Sustained Flow is active
+    if (coherence >= 0.85) {
+      if (lockWave === 0) lockWave = 0.001;   // trigger
+      lockWave = Math.min(1, lockWave + dt * 0.55);   // ~1.8s to cross
+      if (lockWave >= 1) lockWave = 0;        // reset for next cycle
+    } else {
+      lockWave = 0;
+    }
+
+    updateStateLabel(coherence, false);
+
+    if (coherence >= 0.85 && !descRevealed) {
+      descRevealed = true;
+      if (descOverlay) descOverlay.classList.add('revealed');
+      if (interHint)   interHint.style.opacity = '0';
+    }
+    if (coherence < 0.75 && descRevealed) {
+      descRevealed = false;
+      if (descOverlay) descOverlay.classList.remove('revealed');
+      if (interHint)   interHint.style.opacity = '';
+    }
+
+    if (stageCanvas) {
+      const ctx = stageCanvas.getContext('2d');
+      // Pass stageT as both the time driver and the breath driver
+      // (breath is computed from t inside drawResonance now)
+      drawResonance(ctx, SC, SC, SR, coherence, stageT, stageT, flashAmt);
+    }
+    stageRafId = requestAnimationFrame(resStageFrame);
+  }
+
+  // ── Notes Flow stage loop ──────────────────────────────────────────
+  function nfStageFrame(ts) {
+    stageRafId = null;
+    if (!stageOpen || activeTile !== 'nf') return;
+    const dt = nfStageLastTs ? Math.min(50, ts - nfStageLastTs) / 1000 : 0.016;
+    nfStageLastTs = ts; nfStageT += dt;
+    if (stageCanvas) {
+      const ctx = stageCanvas.getContext('2d');
+      ctx.clearRect(0, 0, 360, 360);
+      ctx.font = '300 76px Spectral,Georgia,serif';
+      ctx.fillStyle = 'rgba(26,26,26,0.80)';
+      ctx.fillText('Notes', 38, 118); ctx.fillText('Flow', 38, 194);
+      ctx.font = '9px ui-monospace,monospace';
+      ctx.fillStyle = 'rgba(26,26,26,0.28)';
+      ctx.fillText('IN PROGRESS · APPLE', 40, 60);
+      const ls = [
+        { y:228,w:0.68,p:0.0 },{ y:246,w:0.52,p:0.5 },
+        { y:264,w:0.78,p:1.0 },{ y:282,w:0.42,p:1.5 },
+        { y:300,w:0.60,p:2.0 },{ y:318,w:0.74,p:2.5 },
+      ];
+      for (const l of ls) {
+        const pulse = 0.7 + Math.sin(nfStageT * 0.35 + l.p) * 0.3;
+        ctx.fillStyle = `rgba(26,26,26,${(0.07 + pulse * 0.07).toFixed(3)})`;
+        ctx.fillRect(38, l.y, (284 * l.w * pulse)|0, 1);
+      }
+    }
+    // Notes Flow reveals description immediately on open
+    if (!descRevealed) {
+      descRevealed = true;
+      if (descOverlay) descOverlay.classList.add('revealed');
+    }
+    stageRafId = requestAnimationFrame(nfStageFrame);
+  }
+
 })();
 </script>
 

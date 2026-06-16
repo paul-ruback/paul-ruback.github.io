@@ -54,6 +54,37 @@
   body.nf-inverted .ic-tile-label,
   body.nf-inverted .ps-tile-lbl { color: rgba(245,243,238,0.85); }
 
+  /* Inverted stage backgrounds and labels */
+  body.nf-inverted .ow-stage  { background: rgba(22,22,21,0.97); }
+  body.nf-inverted .ow-stage-title,
+  body.nf-inverted .ow-hud,
+  body.nf-inverted .ow-hint   { color: rgba(230,229,224,0.35); }
+  body.nf-inverted .ow-banner { background: rgba(22,22,21,0.92); border-color: rgba(245,243,238,0.18); }
+  body.nf-inverted .ow-banner-title { color: rgba(230,229,224,0.85); }
+  body.nf-inverted .ow-banner-sub   { color: rgba(230,229,224,0.45); }
+  body.nf-inverted .ow-banner-btn   { color: rgba(230,229,224,0.75); border-color: rgba(245,243,238,0.35); }
+
+  /* Outward SVG elements — static ones inherit ink via CSS */
+  body.nf-inverted .ow-tile-svg circle,
+  body.nf-inverted .ow-tile-svg polygon { stroke: rgba(230,229,224,0.75); }
+  body.nf-inverted #ow-mouth,
+  body.nf-inverted #ow-spokes line,
+  body.nf-inverted #ow-ship polygon { stroke: rgba(230,229,224,0.75); }
+  body.nf-inverted #ow-fire-btn circle:first-child { fill: rgba(22,22,21,0.7); stroke: rgba(230,229,224,0.65); }
+  body.nf-inverted #ow-fire-btn circle:last-child  { fill: rgba(230,229,224,0.75); }
+
+  body.nf-inverted .ic-stage  { background: rgba(22,22,21,0.97); }
+  body.nf-inverted .ic-stage-title,
+  body.nf-inverted .ic-state-label,
+  body.nf-inverted .ic-interaction-hint,
+  body.nf-inverted .ic-hint   { color: rgba(230,229,224,0.35); }
+  body.nf-inverted .ic-desc-overlay { background: rgba(22,22,21,0.95); }
+  body.nf-inverted .ic-back-eyebrow { color: rgba(230,229,224,0.35); }
+  body.nf-inverted .ic-back-title   { color: rgba(230,229,224,0.88); }
+  body.nf-inverted .ic-back-sub     { color: rgba(230,229,224,0.45); }
+  body.nf-inverted .ic-back-divider { background: rgba(245,243,238,0.12); }
+  body.nf-inverted .ic-back-body    { color: rgba(230,229,224,0.70); }
+
   /* home button */
   #nf-home {
     position: fixed;
@@ -80,7 +111,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 24px auto 8px;
+    margin: 24px auto 24px;
     padding: 0;
     gap: 24px;
   }
@@ -101,16 +132,16 @@
     --ps-ink:   #1a1a1a;
     --ps-ink-2: #5a5a5a;
     --ps-ink-3: #9a9a9a;
-    --ps-bg:    #f5f3ee;
     --ps-mono:  ui-monospace, "SF Mono", Menlo, monospace;
     --ps-serif: 'Spectral', Georgia, serif;
-    position: relative; width: 100%;
+    position: relative; width: 220px;
     font-family: var(--ps-serif); color: var(--ps-ink);
   }
+
+  /* ── tile ── */
   #ps-tile {
     position: relative;
     width: 220px; height: 220px;
-    margin: 8px auto;
     border: 1px solid var(--ps-ink-3);
     cursor: pointer;
     display: flex; flex-direction: column;
@@ -123,89 +154,102 @@
     font-family: var(--ps-mono); font-size: 10px;
     letter-spacing: 0.24em; text-transform: uppercase; color: var(--ps-ink-2);
   }
+
+  /* ── stage: open playfield, no card ── */
   #ps-stage {
     position: fixed; inset: 0; z-index: 9000;
     display: flex; align-items: center; justify-content: center;
     background: rgba(245,243,238,0.97);
     opacity: 0; pointer-events: none;
     transition: opacity 0.28s ease;
+    user-select: none; -webkit-user-select: none;
   }
   #ps-stage.open { opacity: 1; pointer-events: all; }
-  .ps-card {
+
+  /* Playfield: smaller than Outward's to leave a generous click-out margin
+     on all sides — at 1440px desktop this gives ~240px on each side. */
+  .ps-playfield {
     position: relative;
-    width: min(680px,92vw); height: min(680px,92vw);
-    background: rgba(245,243,238,0.96); border: 1px solid rgba(17,17,16,0.88);
-    border-radius: 0;
-    display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
+    width: min(560px, 80vw);
+    height: min(560px, 80vw);
+    max-width: 560px; max-height: 560px;
   }
-  .ps-card-head {
-    padding: 0.75rem 1.25rem 0.6rem;
-    display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(17,17,16,0.14);
+
+  #ps-stage-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block; cursor: pointer;
   }
-  .ps-card-title {
-    font-family: 'Spectral', Georgia, serif; font-size: 15px;
-    font-weight: 300; letter-spacing: -0.01em; color: rgba(17,17,16,0.88);
-    display: flex; align-items: center; gap: 0.6rem;
+
+  /* Top-left: title + solid name on one line */
+  .ps-hud {
+    position: absolute;
+    font-family: var(--ps-mono); font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ps-ink-3); pointer-events: none;
+    white-space: nowrap;
   }
-  .ps-eyebrow { font-family: var(--ps-mono); font-size: 7.5px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(17,17,16,0.28); }
-  .ps-close {
-    background: none; border: 0.5px solid rgba(17,17,16,0.18);
-    border-radius: 2px; padding: 0.28rem 0.52rem; cursor: pointer;
-    font-family: var(--ps-mono); font-size: 8px; letter-spacing: 0.16em; text-transform: uppercase;
-    color: rgba(17,17,16,0.36); transition: color 0.15s, border-color 0.15s; flex-shrink: 0; margin-top: 0.1rem;
-  }
-  .ps-close:hover { color: rgba(17,17,16,0.8); border-color: rgba(17,17,16,0.4); }
-  .ps-canvas-wrap {
-    position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0.75rem;
-  }
-  #ps-stage-canvas { display: block; cursor: pointer; }
-  .ps-state-label {
-    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-    font-family: var(--ps-mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: rgba(17,17,16,0.28); white-space: nowrap; pointer-events: none; transition: opacity 0.4s;
-  }
+  .ps-hud.left  { top: 0; left: 0; }
+  /* Top-right: F/V/E — clear of the title */
+  .ps-hud.right { top: 0; right: 0; text-align: right; }
+
+  /* Next-solid hint — appears just above the midpoint, clear of both HUDs */
   .ps-next-hint {
-    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-    font-family: 'Spectral', Georgia, serif; font-size: 10px; font-weight: 300; font-style: italic;
-    color: rgba(17,17,16,0.3); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.5s;
+    position: absolute; top: 44px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--ps-serif); font-size: 10px;
+    font-weight: 300; font-style: italic;
+    color: rgba(17,17,16,0.3); white-space: nowrap;
+    pointer-events: none; opacity: 0; transition: opacity 0.5s;
   }
   .ps-next-hint.visible { opacity: 1; }
-  .ps-counter {
-    position: absolute; top: 14px; right: 16px;
-    font-family: var(--ps-mono); font-size: 8px; letter-spacing: 0.12em; color: rgba(17,17,16,0.2); pointer-events: none;
-  }
-  .ps-footer {
-    padding: 0.55rem 1.25rem 0.6rem; border-top: 1px solid rgba(17,17,16,0.14);
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  }
-  .ps-metrics { display: flex; gap: 2px; }
-  .ps-metric {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 0.35rem 0.7rem; border: 0.5px solid rgba(17,17,16,0.09);
-    border-radius: 3px; background: rgba(245,244,240,0.7); width: 58px; flex-shrink: 0;
-  }
-  .ps-metric-val { font-family: 'Spectral', Georgia, serif; font-size: 16px; font-weight: 300; color: rgba(17,17,16,0.8); line-height: 1; font-variant-numeric: tabular-nums; min-width: 2ch; text-align: center; }
-  .ps-metric-lbl { font-family: var(--ps-mono); font-size: 7px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(17,17,16,0.32); margin-top: 0.18rem; }
-  .ps-footer-right { text-align: right; min-width: 140px; flex-shrink: 0; }
-  .ps-solid-name { font-family: 'Spectral', Georgia, serif; font-size: 12px; font-weight: 300; font-style: italic; color: rgba(17,17,16,0.5); }
-  .ps-equation { font-family: var(--ps-mono); font-size: 7px; letter-spacing: 0.04em; color: rgba(17,17,16,0.24); margin-top: 0.14rem; }
-  .ps-euler { font-family: var(--ps-mono); font-size: 8px; letter-spacing: 0.06em; color: rgba(17,17,16,0.22); margin-top: 0.28rem; opacity: 0; transition: opacity 0.4s; height: 12px; overflow: hidden; }
 
+  /* Cycle counter — below the right HUD, not on top of it */
+  .ps-counter {
+    position: absolute; top: 18px; right: 0;
+    font-family: var(--ps-mono); font-size: 8px;
+    letter-spacing: 0.12em; color: rgba(17,17,16,0.18);
+    pointer-events: none;
+  }
+
+  /* Bottom stack — three layers, each with room to breathe */
+  /* Euler equation: fades in during transitions */
+  .ps-euler {
+    position: absolute; bottom: 52px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--ps-mono); font-size: 8px;
+    letter-spacing: 0.06em; color: rgba(17,17,16,0.22);
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.4s; white-space: nowrap;
+  }
+  /* Solid description (italic Spectral) */
+  .ps-solid-name {
+    position: absolute; bottom: 30px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--ps-serif); font-size: 12px;
+    font-weight: 300; font-style: italic;
+    color: rgba(17,17,16,0.42);
+    white-space: nowrap; pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  /* State prompt (tap to decompose / tap to rebuild) */
+  .ps-hint {
+    position: absolute; bottom: 10px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--ps-mono); font-size: 9px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ps-ink-3); white-space: nowrap;
+    pointer-events: none;
+  }
+
+  /* Inverted overrides */
   body.nf-inverted #ps-stage { background: rgba(22,22,21,0.97); }
-  body.nf-inverted .ps-card { background: rgba(22,22,21,0.96); border-color: rgba(230,229,224,0.88); }
-  body.nf-inverted .ps-card-head, body.nf-inverted .ps-footer { border-color: rgba(230,229,224,0.14); }
-  body.nf-inverted .ps-card-title { color: rgba(230,229,224,0.86); }
-  body.nf-inverted .ps-eyebrow, body.nf-inverted .ps-counter { color: rgba(230,229,224,0.28); }
-  body.nf-inverted .ps-close { border-color: rgba(230,229,224,0.15); color: rgba(230,229,224,0.34); }
-  body.nf-inverted .ps-close:hover { color: rgba(230,229,224,0.8); border-color: rgba(230,229,224,0.38); }
-  body.nf-inverted .ps-state-label, body.nf-inverted .ps-next-hint { color: rgba(230,229,224,0.25); }
-  body.nf-inverted .ps-metric { background: rgba(22,22,21,0.7); border-color: rgba(230,229,224,0.08); }
-  body.nf-inverted .ps-metric-val { color: rgba(230,229,224,0.8); }
-  body.nf-inverted .ps-metric-lbl { color: rgba(230,229,224,0.28); }
-  body.nf-inverted .ps-solid-name { color: rgba(230,229,224,0.48); }
-  body.nf-inverted .ps-equation { color: rgba(230,229,224,0.2); }
-  body.nf-inverted .ps-euler { color: rgba(230,229,224,0.22); }
+  body.nf-inverted .ps-hud       { color: rgba(230,229,224,0.28); }
+  body.nf-inverted .ps-solid-name{ color: rgba(230,229,224,0.40); }
+  body.nf-inverted .ps-hint      { color: rgba(230,229,224,0.25); }
+  body.nf-inverted .ps-next-hint { color: rgba(230,229,224,0.25); }
+  body.nf-inverted .ps-euler     { color: rgba(230,229,224,0.22); }
+  body.nf-inverted .ps-counter   { color: rgba(230,229,224,0.18); }
 </style>
 
 <style>
@@ -216,11 +260,11 @@
     --ow-bg: #f5f3ee;
     --ow-mono: ui-monospace, "SF Mono", Menlo, monospace;
     --ow-serif: 'Spectral', Georgia, serif;
-    position: relative; width: 100%; min-height: 360px;
+    position: relative; width: 220px;
     font-family: var(--ow-serif); color: var(--ow-ink);
   }
   .ow-tile {
-    position: relative; width: 220px; height: 220px; margin: 8px auto;
+    position: relative; width: 220px; height: 220px;
     border: 1px solid var(--ow-ink-3); cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
     transition: transform 0.25s ease, border-color 0.25s ease;
@@ -272,40 +316,75 @@
     --ic-rule:  rgba(0,0,0,0.14);
     --ic-mono:  ui-monospace, "SF Mono", Menlo, monospace;
     --ic-serif: 'Spectral', Georgia, serif;
-    position: relative; width: 100%; padding: 40px 0;
+    position: relative;
     font-family: var(--ic-serif); color: var(--ic-ink);
   }
-  .ic-grid { display: grid; grid-template-columns: repeat(2,220px); gap: 40px; justify-content: center; }
-
-  /* Tile — matches ow-tile and ps-tile */
+  /* Tile — identical layout to .ow-tile and #ps-tile */
   .ic-tile {
     width: 220px; height: 220px; border: 1px solid var(--ic-ink-3);
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
     transition: transform 0.25s ease, border-color 0.25s ease;
-    position: relative; overflow: hidden;
+    position: relative;
   }
   .ic-tile:hover { border-color: var(--ic-ink); transform: scale(1.02); }
   .ic-tile-label {
     font-family: var(--ic-mono); font-size: 10px;
     letter-spacing: 0.24em; text-transform: uppercase; color: var(--ic-ink-2);
-    position: absolute; bottom: 10px; left: 0; width: 100%; text-align: center;
-    pointer-events: none;
   }
 
-  /* Resonance tile: canvas fills the space */
+  /* Resonance tile canvas — same size as Plato's tile canvas */
   .resonance-tile { padding: 0; }
-  #resonance-canvas {
-    position: absolute; inset: 0; width: 220px; height: 220px;
-    display: block; pointer-events: none;
-  }
+  #resonance-canvas { display: block; pointer-events: none; }
 
-  /* ── Stage ── */
+  /* ── Stage: open playfield, no box — matches Plato/Outward ── */
   .ic-stage {
     position: fixed; inset: 0; background: rgba(245,243,238,0.97);
     z-index: 9000; display: none; align-items: center; justify-content: center;
+    user-select: none; -webkit-user-select: none;
   }
-  .ic-stage.open { display: flex; animation: ic-fadein 0.25s ease forwards; }
+  .ic-stage.open { display: flex; animation: ic-fadein 0.28s ease forwards; }
   @keyframes ic-fadein { from { opacity: 0; } to { opacity: 1; } }
+
+  .ic-playfield {
+    position: relative;
+    width: min(560px, 80vw); height: min(560px, 80vw);
+    max-width: 560px; max-height: 560px;
+  }
+
+  #ic-stage-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block; cursor: crosshair;
+  }
+
+  /* HUD labels — same approach as Plato */
+  .ic-stage-title {
+    position: absolute; top: 0; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--ic-mono); font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ic-ink-3); pointer-events: none; white-space: nowrap;
+  }
+  .ic-state-label {
+    position: absolute; bottom: 28px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.26em;
+    text-transform: uppercase; color: var(--ic-ink-3);
+    transition: color 0.8s ease; pointer-events: none; white-space: nowrap;
+  }
+  .ic-state-label.coupling  { color: var(--ic-ink-2); }
+  .ic-state-label.resonance { color: var(--ic-ink);   }
+  .ic-state-label.flow      { color: var(--ic-ink); }
+
+  .ic-interaction-hint {
+    position: absolute; bottom: 10px; left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--ic-ink-3);
+    pointer-events: none; white-space: nowrap;
+  }
 
   .ic-hint {
     position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
@@ -314,56 +393,18 @@
     pointer-events: none; user-select: none; z-index: 9001;
   }
 
-  /* ── Flip card container (kept as wrapper, no longer flips) ── */
-  .ic-flip-scene {
-    width: min(480px, 92vw); height: min(560px, 88vh);
-    opacity: 0; transform: scale(0.96);
-    transition: opacity 0.32s ease, transform 0.32s cubic-bezier(0.4,0,0.2,1);
-  }
-  .ic-stage.open .ic-flip-scene { opacity: 1; transform: scale(1); }
-
-  .ic-flip-inner { width: 100%; height: 100%; position: relative; }
-
-  /* Single face — no backface needed */
-  .ic-face {
-    position: absolute; inset: 0;
-    border: 1px solid var(--ic-ink);
-    background: var(--ic-bg);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 14px; overflow: hidden;
-  }
-  .ic-face-front canvas { display: block; cursor: crosshair; flex-shrink: 0; }
-
-  .ic-state-label {
-    font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.26em;
-    text-transform: uppercase; color: var(--ic-ink-3);
-    transition: color 0.8s ease; flex-shrink: 0;
-  }
-  .ic-state-label.coupling  { color: var(--ic-ink-2); }
-  .ic-state-label.resonance { color: var(--ic-ink);   }
-  .ic-state-label.flow      { color: var(--ic-ink); font-weight: 500; }
-
-  .ic-interaction-hint {
-    font-family: var(--ic-mono); font-size: 8px; letter-spacing: 0.16em;
-    text-transform: uppercase; color: var(--ic-ink-3); opacity: 0.6; flex-shrink: 0;
-  }
-
-  /* Description overlay: sits over the animation, fades in at Sustained Flow */
+  /* Description overlay: fades in at Sustained Flow, over the animation */
   .ic-desc-overlay {
     position: absolute; inset: 0;
-    background: var(--ic-bg);
+    background: rgba(245,243,238,0.95);
     padding: 44px 40px 36px;
     display: flex; flex-direction: column; gap: 18px;
     overflow-y: auto;
     opacity: 0; pointer-events: none;
     transition: opacity 1.2s ease;
   }
-  .ic-desc-overlay.revealed {
-    opacity: 1; pointer-events: auto;
-  }
+  .ic-desc-overlay.revealed { opacity: 1; pointer-events: auto; }
 
-  /* ── Back face: description text ── */
   .ic-back-eyebrow {
     font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.24em;
     text-transform: uppercase; color: var(--ic-ink-3);
@@ -376,9 +417,7 @@
     font-family: var(--ic-mono); font-size: 9px; letter-spacing: 0.16em;
     text-transform: uppercase; color: var(--ic-ink-2); margin-top: -8px;
   }
-  .ic-back-divider {
-    height: 1px; background: var(--ic-rule); flex-shrink: 0;
-  }
+  .ic-back-divider { height: 1px; background: var(--ic-rule); flex-shrink: 0; }
   .ic-back-body {
     font-family: var(--ic-serif); font-size: 0.95rem; line-height: 1.65;
     color: var(--ic-ink); margin: 0;
@@ -431,6 +470,11 @@
         <g id="ow-ship" transform="translate(500 540) rotate(-90)" style="pointer-events:none;">
           <polygon points="0,-14 11,11 -11,11" fill="none" stroke="#1a1a1a" stroke-width="1.3" stroke-linejoin="round"/>
         </g>
+        <!-- Mobile fire button: tap to fire, bottom-centre -->
+        <g id="ow-fire-btn" style="cursor:pointer;">
+          <circle cx="500" cy="640" r="28" fill="rgba(245,243,238,0.7)" stroke="#1a1a1a" stroke-width="1"/>
+          <circle cx="500" cy="640" r="5" fill="#1a1a1a" opacity="0.7"/>
+        </g>
       </svg>
       <div class="ow-hint">move · aim ship around the ring &nbsp;·&nbsp; click or space · fire</div>
       <div class="ow-banner" id="ow-banner">
@@ -449,46 +493,32 @@
     <span class="ps-tile-lbl">Plato</span>
   </div>
   <div id="ps-stage">
-    <div class="ps-card">
-      <div class="ps-card-head">
-        <div class="ps-card-title">
-          <span class="ps-eyebrow">Plato · Timaeus · c. 360 BCE</span>Regular Solids
-        </div>
-        <button class="ps-close" id="ps-close-btn">esc</button>
-      </div>
-      <div class="ps-canvas-wrap" id="ps-canvas-wrap">
-        <canvas id="ps-stage-canvas"></canvas>
-        <div class="ps-next-hint" id="ps-next-hint"></div>
-        <div class="ps-state-label" id="ps-state-label">tap to decompose</div>
-        <div class="ps-counter" id="ps-counter"></div>
-      </div>
-      <div class="ps-footer">
-        <div class="ps-metrics">
-          <div class="ps-metric"><div class="ps-metric-val" id="ps-m-faces">4</div><div class="ps-metric-lbl">faces</div></div>
-          <div class="ps-metric"><div class="ps-metric-val" id="ps-m-verts">4</div><div class="ps-metric-lbl">vertices</div></div>
-          <div class="ps-metric"><div class="ps-metric-val" id="ps-m-edges">6</div><div class="ps-metric-lbl">edges</div></div>
-        </div>
-        <div class="ps-footer-right">
-          <div class="ps-solid-name" id="ps-name">tetrahedron</div>
-          <div class="ps-equation" id="ps-eq">4 equilateral △  —  fire</div>
-          <div class="ps-euler" id="ps-euler"></div>
-        </div>
-      </div>
+    <div class="ps-playfield" id="ps-canvas-wrap">
+      <!-- Top HUDs -->
+      <div class="ps-hud left">plato · <span id="ps-name">tetrahedron</span></div>
+      <div class="ps-hud right"><span id="ps-m-faces">4</span>f · <span id="ps-m-verts">4</span>v · <span id="ps-m-edges">6</span>e</div>
+      <div class="ps-counter" id="ps-counter"></div>
+      <!-- Next solid hint (scattered state) -->
+      <div class="ps-next-hint" id="ps-next-hint"></div>
+      <!-- Canvas -->
+      <canvas id="ps-stage-canvas"></canvas>
+      <!-- Bottom stack: euler → description → state prompt -->
+      <div class="ps-euler" id="ps-euler"></div>
+      <div class="ps-solid-name" id="ps-eq">4 equilateral △  —  fire</div>
+      <div class="ps-hint" id="ps-state-label">tap to decompose</div>
     </div>
   </div>
 </div>
 
 <!-- ── Ideas ── -->
-<div id="ic-root">
-  <div class="ic-grid">
-
     <!-- Notes Flow tile -->
     <div class="ic-tile" id="ic-tile-01"
-         data-eyebrow="in progress" data-title="Notes' Flow"
-         data-sub="apple · draft"
-         data-body="Notes' Flow converts an archive of information into a live, evolving tool. Appearing as a collaboration alert, a Flow Note compiles an evolving workspace
-by shared calendar event, overlapping active editing sessions, or identical links. Every paragraph is a living link - you can edit, refine, or re-categorize thoughts directly within the Flow. Like weekly playlists, these flows last one cycle at a time - finish your note, get back to your workflow.">
-      <canvas id="nf-tile-canvas" width="220" height="220" style="position:absolute;inset:0;pointer-events:none;"></canvas>
+         data-eyebrow="in progress" data-title="Notes Flow"
+         data-sub="Apple · draft"
+         data-body="Notes Flow is a weekly feature that dynamically assembles your existing content into a temporary, curated summary. By surfacing paragraphs from your notes based on prime-numbered sequences and thematic symmetry, the app creates a unified view of your thoughts that encourages review and refinement. This summary is ephemeral; if not addressed by the next weekly cycle, the Flow expires and archives, ensuring your workspace remains focused and current.
+Each paragraph within a Flow acts as a direct link to the original entry, enabling immediate editing and re-categorization. These modifications are reflected in the source notes in real-time, allowing you to iterate on your ideas directly within the Flow view. To provide a clearer sense of your engagement, the interface utilizes generative styling that subtly shifts in font and color as you expand upon your notes, providing visual cues for your progress over time.
+When a new Flow is generated, you receive a notification styled as a collaboration alert, signaling that your latest synthesis is ready for review. By treating the feature as an ongoing, iterative dialogue between your past entries and your current perspective, Notes Flow brings your notes to the forefront of your workflow, turning a static archive into an active, growing resource.">
+      <canvas id="nf-tile-canvas" width="110" height="110" style="display:block;"></canvas>
       <div class="ic-tile-label">idea · 01</div>
     </div>
 
@@ -496,40 +526,32 @@ by shared calendar event, overlapping active editing sessions, or identical link
     <div class="ic-tile resonance-tile" id="ic-tile-02"
          data-eyebrow="ongoing" data-title="Resonance"
          data-sub="design · quiet interfaces"
-         data-body=" Resonance elevates your Lock Screen into a generative and calming digital rhythm. Using heart-rate variability and movement pace, it provides an element of a calm-center. The interface responds with haptic/ ambient feedback to engage and 'phase-lock' by tap-calibration. The feedback loop is a reminder to breathe deeply and center. Resonance is an intuitive, peripheral experience.">
-      <canvas id="resonance-canvas" width="220" height="220"></canvas>
+         data-body="Resonance is a lock-screen interface that visualizes the alignment between your biological rhythms and your digital activity. Designed as an interactive, generative artifact, it uses on-device data—such as heart rate variability and movement cadence—to create a visual representation of your current state. When your system detects fragmentation in your workflow, Resonance provides a calm, centered focal point that encourages you to sync your internal tempo with your surroundings. Interaction is designed for composure and comfort. Through subtle, fluid animations and responsive haptics, you can engage with the artifact directly on your Lock Screen. Touching the display allows the visual elements to naturally "lock" into a unified, rhythmic motion. This process of mutual phase locking creates a tactile feedback loop, serving as a gentle prompt to slow your breathing, ground your focus, and achieve a state of synchronized productivity. By bringing this alignment to the Lock Screen, Resonance turns your device into an anchor for mindfulness. It removes the friction of opening an app or navigating a menu, instead offering an immediate, physical-feeling object that exists at the periphery of your digital workspace. It is a system-level tool for comfort.">
+      <canvas id="resonance-canvas" width="110" height="110" style="display:block;"></canvas>
       <div class="ic-tile-label">idea · 02</div>
     </div>
 
-  </div>
+</div><!-- /diamond-grid -->
 
-  <!-- Shared stage (one per idea, reused) -->
+<!-- ic-root: stage-only wrapper (fixed overlay, DOM position irrelevant) -->
+<div id="ic-root">
   <div class="ic-stage" id="ic-stage">
-    <div class="ic-flip-scene" id="ic-flip-scene">
-      <div class="ic-flip-inner" id="ic-flip-inner">
-
-        <!-- Front face: interactive canvas -->
-        <div class="ic-face ic-face-front" id="ic-face-front">
-          <canvas id="ic-stage-canvas" width="360" height="360" style="cursor:crosshair;"></canvas>
-          <div class="ic-state-label" id="ic-state-label">Fragmented</div>
-          <div class="ic-interaction-hint" id="ic-interaction-hint">click to synchronise</div>
-          <!-- Description overlay: fades in when Sustained Flow is reached -->
-          <div class="ic-desc-overlay" id="ic-desc-overlay">
-            <div class="ic-back-eyebrow" id="ic-back-eyebrow"></div>
-            <h2 class="ic-back-title" id="ic-back-title"></h2>
-            <div class="ic-back-sub" id="ic-back-sub"></div>
-            <div class="ic-back-divider"></div>
-            <p class="ic-back-body" id="ic-back-body"></p>
-          </div>
-        </div>
-
+    <div class="ic-playfield" id="ic-playfield">
+      <div class="ic-stage-title" id="ic-stage-title">resonance</div>
+      <canvas id="ic-stage-canvas" width="560" height="560"></canvas>
+      <div class="ic-state-label" id="ic-state-label">Fragmented</div>
+      <div class="ic-interaction-hint" id="ic-interaction-hint">click to synchronise</div>
+      <div class="ic-desc-overlay" id="ic-desc-overlay">
+        <div class="ic-back-eyebrow" id="ic-back-eyebrow"></div>
+        <h2 class="ic-back-title" id="ic-back-title"></h2>
+        <div class="ic-back-sub" id="ic-back-sub"></div>
+        <div class="ic-back-divider"></div>
+        <p class="ic-back-body" id="ic-back-body"></p>
       </div>
     </div>
     <div class="ic-hint">click outside · esc</div>
   </div>
 </div>
-
-</div><!-- /diamond-grid -->
 
 <!-- ═══════════════════════════════════════════════════════════════
      NUMERIC FIELD  —  optimized pixel-buffer renderer
@@ -560,30 +582,21 @@ by shared calendar event, overlapping active editing sessions, or identical link
     // ── physics ──────────────────────────────────────────────────
     const ATTRACT_RADIUS   = 140;
     const ATTRACT_STRENGTH = 0.038;
-    const SETTLE_RATE      = 0.055;  // was 0.14 — slower spring = grains hang longer
-    const VELOCITY_DAMPING = 0.97;   // was 0.93 — less friction = wave travels further
-    const MAX_DISPLACEMENT = 55;     // was 24 — grains can travel much further
+    const SETTLE_RATE      = 0.055;
+    const VELOCITY_DAMPING = 0.97;
+    const MAX_DISPLACEMENT = 55;
 
-    // Kick: wider radius so the ripple crosses the full viewport,
-    // higher velocity so distant grains get a real push.
-    const REVERB_KICK_VELOCITY = 4.2;   // was 2.6
-    const REVERB_KICK_RADIUS   = 420;   // was 160 — now reaches across most screens
+    const REVERB_KICK_VELOCITY = 4.2;
+    const REVERB_KICK_RADIUS   = 420;
 
-    const SHOVE_RADIUS    = 80;      // was 60 — slightly wider wake
-    const SHOVE_STRENGTH  = 0.07;
+    const SHOVE_RADIUS    = 60;
+    const SHOVE_STRENGTH  = 0.085;
     const SHOVE_MIN_SPEED = 0.02;
 
-    // ── press-gather (hold mouse/touch to pull grains in) ────────
-    // While pressed, grains within GATHER_RADIUS are continuously
-    // attracted at GATHER_STRENGTH — stronger and wider than the
-    // passive hover attract so the effect is clearly intentional.
-    // On release, a dispersal kick fires outward (negative polarity
-    // applied to the normal kick, so grains scatter away from where
-    // you lifted rather than toward it).
-    const GATHER_RADIUS     = 260;   // was 220
+    const GATHER_RADIUS     = 260;
     const GATHER_STRENGTH   = 0.11;
-    const DISPERSE_VELOCITY = 5.2;   // was 3.8 — bigger release burst
-    const DISPERSE_RADIUS   = 300;   // was 200
+    const DISPERSE_VELOCITY = 5.2;
+    const DISPERSE_RADIUS   = 300;
 
     // ── inversion ────────────────────────────────────────────────
     const INVERSION_LERP = 0.04;
@@ -729,6 +742,7 @@ by shared calendar event, overlapping active editing sessions, or identical link
         e.stopPropagation();
         targetPolarity = -targetPolarity;
         document.body.classList.toggle("nf-inverted", targetPolarity < 0);
+        document.dispatchEvent(new Event("nfinvert"));
       });
       invertBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
       invertBtn.addEventListener("pointerup",   (e) => e.stopPropagation());
@@ -1017,7 +1031,17 @@ by shared calendar event, overlapping active editing sessions, or identical link
       return el;
     }
 
-    function ensurePool(pool, group, count, tag, baseAttrs) {
+    const getInk = () => document.body.classList.contains('nf-inverted') ? '#e6e5e0' : '#1a1a1a';
+
+    // Re-colour all pooled SVG elements when the page inverts
+    document.addEventListener('nfinvert', () => {
+      const ink = getInk();
+      astPool.forEach(el  => el.setAttribute('stroke', ink));
+      shotPool.forEach(el => el.setAttribute('fill',   ink));
+      ringPool.forEach(el => el.setAttribute('stroke', ink));
+      if (portalArc)  portalArc.setAttribute('stroke',  ink);
+      if (portalTick) portalTick.setAttribute('stroke', ink);
+    });    function ensurePool(pool, group, count, tag, baseAttrs) {
       while (pool.length < count) {
         const el = document.createElementNS(SVG_NS, tag);
         for (const [k, v] of Object.entries(baseAttrs)) el.setAttribute(k, v);
@@ -1028,22 +1052,22 @@ by shared calendar event, overlapping active editing sessions, or identical link
     }
 
     // Pre-warm pools to avoid initial frame allocation spikes.
-    ensurePool(astPool,  asteroidsG, 25, "circle", { fill:"none", stroke:"#1a1a1a", "stroke-width":"1" });
-    ensurePool(shotPool, shotsG,     10, "circle", { fill:"#1a1a1a" });
+    ensurePool(astPool,  asteroidsG, 25, "circle", { fill:"none", stroke:getInk(), "stroke-width":"1" });
+    ensurePool(shotPool, shotsG,     10, "circle", { fill:getInk() });
     ensurePool(ringPool, depthRingsG, DEPTH_RING_COUNT + 2, "circle", {
-      fill: "none", stroke: "#1a1a1a", "stroke-width": "0.5",
+      fill: "none", stroke: getInk(), "stroke-width": "0.5",
       "stroke-dasharray": "3 8"
     });
 
     // Pre-create portal elements.
     portalArc  = document.createElementNS(SVG_NS, "path");
     portalArc.setAttribute("fill", "none");
-    portalArc.setAttribute("stroke", "#1a1a1a");
+    portalArc.setAttribute("stroke", getInk());
     portalArc.setAttribute("stroke-linecap", "round");
     portal.appendChild(portalArc);
 
     portalTick = document.createElementNS(SVG_NS, "line");
-    portalTick.setAttribute("stroke", "#1a1a1a");
+    portalTick.setAttribute("stroke", getInk());
     portalTick.setAttribute("stroke-linecap", "round");
     portal.appendChild(portalTick);
 
@@ -1189,7 +1213,7 @@ by shared calendar event, overlapping active editing sessions, or identical link
 
     function renderAsteroids() {
       ensurePool(astPool, asteroidsG, asteroids.length,
-        "circle", { fill:"none", stroke:"#1a1a1a", "stroke-width":"1" });
+        "circle", { fill:"none", stroke:getInk(), "stroke-width":"1" });
       let idx = 0;
       for (const a of asteroids) {
         if (!a.alive || a.z < -50) continue;
@@ -1211,7 +1235,7 @@ by shared calendar event, overlapping active editing sessions, or identical link
     }
 
     function renderShots() {
-      ensurePool(shotPool, shotsG, shots.length, "circle", { fill:"#1a1a1a" });
+      ensurePool(shotPool, shotsG, shots.length, "circle", { fill:getInk() });
       let idx = 0;
       for (const s of shots) {
         const p = project(s.x, s.y, s.z);
@@ -1235,7 +1259,7 @@ by shared calendar event, overlapping active editing sessions, or identical link
         collapseFactor = collapseFactor * collapseFactor;
       }
       ensurePool(ringPool, depthRingsG, depthRings.length,
-        "circle", { fill:"none", stroke:"#1a1a1a", "stroke-width":"0.5", "stroke-dasharray":"3 8" });
+        "circle", { fill:"none", stroke:getInk(), "stroke-width":"0.5", "stroke-dasharray":"3 8" });
 
       for (let ri = 0; ri < depthRings.length; ri++) {
         let dz = depthRings[ri];
@@ -1528,6 +1552,16 @@ by shared calendar event, overlapping active editing sessions, or identical link
       cursorOnSvg = false;
     }
 
+    // Mobile fire button
+    const fireBtnEl = document.getElementById('ow-fire-btn');
+    if (fireBtnEl) {
+      fireBtnEl.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleSpaceOrFire();
+      });
+    }
+
     tile.addEventListener("click", openStage);
     const SAFE_RADIUS_OW = 440;
     stage.addEventListener("click", (e) => {
@@ -1790,13 +1824,26 @@ by shared calendar event, overlapping active editing sessions, or identical link
   let tileAngle=0,stageAngle=0;
   let tileIdx=0,tileParts=null,tileMorphT=1,tileMorphing=false,tileNextIdx=1,tilePauseT=0;
 
-  function resizeTile(){if(!tileC||!tileC.offsetWidth)return;tileC.width=tileC.offsetWidth;tileC.height=tileC.offsetHeight;}
-  function resizeStage(){if(!stageC)return;const wrap=document.getElementById('ps-canvas-wrap');if(!wrap)return;const dim=Math.min(wrap.offsetWidth-24,wrap.offsetHeight-20,540);stageC.width=dim;stageC.height=dim;stageC.style.width=dim+'px';stageC.style.height=dim+'px';}
+  function resizeTile(){
+    if(!tileC||!tileC.offsetWidth)return;
+    const dpr=window.devicePixelRatio||1;
+    const sz=tileC.offsetWidth;
+    tileC.width=sz*dpr; tileC.height=sz*dpr;
+    tileX.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function resizeStage(){
+    if(!stageC)return;
+    const wrap=document.getElementById('ps-canvas-wrap');if(!wrap)return;
+    const dim=Math.min(wrap.offsetWidth,wrap.offsetHeight,560);
+    stageC.width=dim;stageC.height=dim;stageC.style.width=dim+'px';stageC.style.height=dim+'px';
+  }
 
   function drawTile(){
-    if(tileC&&tileC.offsetWidth>0&&tileC.width!==tileC.offsetWidth)resizeTile();
+    if(tileC&&tileC.offsetWidth>0&&tileC.width!==tileC.offsetWidth*(window.devicePixelRatio||1))resizeTile();
     if(!tileC||!tileC.width){requestAnimationFrame(drawTile);return;}
-    const w=tileC.width,h=tileC.height;tileX.clearRect(0,0,w,h);
+    // Use logical (CSS) size for all coordinates — DPR transform handles sharpness
+    const w=tileC.offsetWidth||tileC.width,h=tileC.offsetHeight||tileC.height;
+    tileX.clearRect(0,0,w,h);
     const sc=Math.min(w,h)*0.50,cx=w/2,cy=h/2;const dk=isDark();
     if(tileMorphing){tileMorphT=Math.min(tileMorphT+0.004,1);if(tileMorphT>=1){tileMorphing=false;tileIdx=tileNextIdx;tilePauseT=0;}}
     else{tilePauseT++;if(tilePauseT>90){tileNextIdx=(tileIdx+1)%SOLIDS.length;tileMorphT=0;tileMorphing=true;}}
@@ -1804,16 +1851,16 @@ by shared calendar event, overlapping active editing sessions, or identical link
     const cA=dk?SOLIDS[tileIdx].hueDark:SOLIDS[tileIdx].hue;
     const cB=dk?SOLIDS[tileNextIdx].hueDark:SOLIDS[tileNextIdx].hue;
     const vs=normVerts(SOLIDS[tileIdx]);const rot=vs.map(v=>{let q=rY(v,tileAngle*0.72);q=rX(q,tileAngle*0.44);return q;});
-    tileX.save();tileX.strokeStyle=`rgb(${cA[0]},${cA[1]},${cA[2]})`;tileX.globalAlpha=(1-t)*0.30;tileX.lineWidth=0.7;
+    tileX.save();tileX.strokeStyle=`rgb(${cA[0]},${cA[1]},${cA[2]})`;tileX.globalAlpha=(1-t)*0.55;tileX.lineWidth=1.0;
     SOLIDS[tileIdx].edges.forEach(e=>{const a=rot[e[0]],b=rot[e[1]];const pa=prj(a[0],a[1],a[2],cx,cy,sc),pb=prj(b[0],b[1],b[2],cx,cy,sc);tileX.beginPath();tileX.moveTo(pa[0],pa[1]);tileX.lineTo(pb[0],pb[1]);tileX.stroke();});
-    if(tileMorphing){const vs2=normVerts(SOLIDS[tileNextIdx]);const rot2=vs2.map(v=>{let q=rY(v,tileAngle*0.72);q=rX(q,tileAngle*0.44);return q;});tileX.globalAlpha=t*0.30;tileX.strokeStyle=`rgb(${cB[0]},${cB[1]},${cB[2]})`;SOLIDS[tileNextIdx].edges.forEach(e=>{const a=rot2[e[0]],b=rot2[e[1]];const pa=prj(a[0],a[1],a[2],cx,cy,sc),pb=prj(b[0],b[1],b[2],cx,cy,sc);tileX.beginPath();tileX.moveTo(pa[0],pa[1]);tileX.lineTo(pb[0],pb[1]);tileX.stroke();});}
+    if(tileMorphing){const vs2=normVerts(SOLIDS[tileNextIdx]);const rot2=vs2.map(v=>{let q=rY(v,tileAngle*0.72);q=rX(q,tileAngle*0.44);return q;});tileX.globalAlpha=t*0.55;tileX.strokeStyle=`rgb(${cB[0]},${cB[1]},${cB[2]})`;SOLIDS[tileNextIdx].edges.forEach(e=>{const a=rot2[e[0]],b=rot2[e[1]];const pa=prj(a[0],a[1],a[2],cx,cy,sc),pb=prj(b[0],b[1],b[2],cx,cy,sc);tileX.beginPath();tileX.moveTo(pa[0],pa[1]);tileX.lineTo(pb[0],pb[1]);tileX.stroke();});}
     tileX.restore();
     if(!tileParts)tileParts=REST[tileIdx].map(r=>r.map(v=>[...v]));
     if(tileMorphing){tileParts=REST[tileIdx].map((r,i)=>r.map((v,j)=>lerpV(v,REST[tileNextIdx][i][j],t)));}
     else{tileParts=REST[tileIdx].map(r=>r.map(v=>[...v]));}
     const rotP=tileParts.map(f=>f.map(v=>{let q=rY(v,tileAngle*0.72);q=rX(q,tileAngle*0.44);return q;}));
     const ord=rotP.map((_,i)=>({i,z:(rotP[i][0][2]+rotP[i][1][2]+rotP[i][2][2])/3})).sort((a,b)=>a.z-b.z);
-    for(const{i}of ord){const[a,b,cc]=rotP[i];const pa=prj(a[0],a[1],a[2],cx,cy,sc),pb=prj(b[0],b[1],b[2],cx,cy,sc),pc=prj(cc[0],cc[1],cc[2],cx,cy,sc);const n=nrm(cross(sub(b,a),sub(cc,a)));const shade=dot(n,LIGHT)*0.5+0.5;const tc=cA.map((x,j)=>lerp(x,cB[j],t)|0);tileX.beginPath();tileX.moveTo(pa[0],pa[1]);tileX.lineTo(pb[0],pb[1]);tileX.lineTo(pc[0],pc[1]);tileX.closePath();tileX.fillStyle=`rgba(${tc[0]},${tc[1]},${tc[2]},${(0.14+shade*0.42).toFixed(3)})`;tileX.fill();tileX.strokeStyle=`rgba(${tc[0]},${tc[1]},${tc[2]},.6)`;tileX.lineWidth=0.7;tileX.stroke();}
+    for(const{i}of ord){const[a,b,cc]=rotP[i];const pa=prj(a[0],a[1],a[2],cx,cy,sc),pb=prj(b[0],b[1],b[2],cx,cy,sc),pc=prj(cc[0],cc[1],cc[2],cx,cy,sc);const n=nrm(cross(sub(b,a),sub(cc,a)));const shade=dot(n,LIGHT)*0.5+0.5;const tc=cA.map((x,j)=>lerp(x,cB[j],t)|0);tileX.beginPath();tileX.moveTo(pa[0],pa[1]);tileX.lineTo(pb[0],pb[1]);tileX.lineTo(pc[0],pc[1]);tileX.closePath();tileX.fillStyle=`rgba(${tc[0]},${tc[1]},${tc[2]},${(0.14+shade*0.42).toFixed(3)})`;tileX.fill();tileX.strokeStyle=`rgba(${tc[0]},${tc[1]},${tc[2]},.75)`;tileX.lineWidth=1.0;tileX.stroke();}
     tileAngle+=0.006;requestAnimationFrame(drawTile);
   }
   function stageLoop(ts){const dt=Math.min((ts-lastT)/1000,0.05);lastT=ts;updateParts(dt);stageAngle+=dt*0.45;const w=stageC.width,h=stageC.height;if(!w||!h){raf=requestAnimationFrame(stageLoop);return;}sX.clearRect(0,0,w,h);renderScene(sX,w/2,h/2,Math.min(w,h)*0.36,stageAngle);raf=requestAnimationFrame(stageLoop);}
@@ -1823,9 +1870,8 @@ by shared calendar event, overlapping active editing sessions, or identical link
   function psOpen(){psStage.classList.add('open');stageOpen=true;resizeStage();solidIdx=0;nextIdx=1;state='idle';stateT=0;cycles=0;initParts(0,1);updateLabels(0);updateCounter();setStateLabel('tap to decompose');document.getElementById('ps-next-hint').classList.remove('visible');stageAngle=tileAngle;cancelAnimationFrame(raf);lastT=performance.now();raf=requestAnimationFrame(stageLoop);}
   function psClose(){psStage.classList.remove('open');stageOpen=false;cancelAnimationFrame(raf);}
 
-  psStage.addEventListener('click',(e)=>{if(e.target.closest('.ps-card'))return;psClose();});
+  psStage.addEventListener('click',(e)=>{if(e.target===psStage)psClose();});
   document.getElementById('ps-stage-canvas').addEventListener('click',(e)=>{e.stopPropagation();psTap();});
-  document.getElementById('ps-close-btn').addEventListener('click',(e)=>{e.stopPropagation();psClose();});
   document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&stageOpen)psClose();});
   let psScrollTimer=null;
   window.addEventListener('scroll',()=>{if(!stageOpen)return;if(psScrollTimer)clearTimeout(psScrollTimer);psScrollTimer=setTimeout(()=>{const rect=psStage.getBoundingClientRect();if(rect.bottom<0||rect.top>window.innerHeight)psClose();},80);});
@@ -1855,10 +1901,10 @@ by shared calendar event, overlapping active editing sessions, or identical link
   let breathPhase = 0.0;
   let flashAmt    = 0.0;
   let lastFlashIdx = -1;
-  let autoFlipFired = false;    // only auto-flip once per open
+  let autoFlipFired = false; // unused, kept for safety
 
-  const CLICK_INCREMENT  = 0.14;   // each click nudges coherence up
-  const DECAY_RATE       = 0.022;  // per second when idle
+  const CLICK_INCREMENT  = 0.28;   // ~4 clicks to Sustained Flow
+  const DECAY_RATE       = 0.08;   // decays meaningfully between clicks
   const FLASH_THRESHOLDS = [0.25, 0.50, 0.75, 1.0];
   const STATES = [
     { min: 0.00, label: 'Fragmented',     cls: ''          },
@@ -1919,183 +1965,247 @@ by shared calendar event, overlapping active editing sessions, or identical link
   function drawResonance(ctx, cx, cy, R, c, t, breath, flash) {
     ctx.clearRect(0, 0, cx * 2, cy * 2);
 
-    // ── Breath ──────────────────────────────────────────────────────
-    // Slow 10s sine: 0 = exhale, 1 = inhale
     const breathCycle = Math.PI * 2 / BREATH_PERIOD;
-    const breathVal   = Math.sin(t * breathCycle) * 0.5 + 0.5;   // 0..1
+    const breathVal   = Math.sin(t * breathCycle) * 0.5 + 0.5;
 
-    // ── Ambient radial field — grows with coherence and breath ──────
-    const fieldAlpha = 0.02 + c * 0.07 + breathVal * c * 0.04;
-    const bg = ctx.createRadialGradient(cx, cy, 2, cx, cy, R * 0.95);
-    bg.addColorStop(0, `rgba(26,26,26,${fieldAlpha.toFixed(3)})`);
-    bg.addColorStop(1, 'rgba(26,26,26,0)');
+    // Ink colour flips with page inversion
+    const dark = document.body.classList.contains('nf-inverted');
+    const ink  = dark ? '230,229,224' : '26,26,26';
+    const K    = (a) => `rgba(${ink},${typeof a === 'number' ? a.toFixed(3) : a})`;
+
+    // ── Ambient field ──────────────────────────────────────────────────
+    const fieldAlpha = 0.05 + c * 0.10 + breathVal * c * 0.04;
+    const bg = ctx.createRadialGradient(cx, cy, 2, cx, cy, R);
+    bg.addColorStop(0, K(fieldAlpha.toFixed(3)));
+    bg.addColorStop(1, K(0));
     ctx.fillStyle = bg; ctx.fillRect(0, 0, cx * 2, cy * 2);
 
-    // ── Rings — stabilise and breathe together at high coherence ────
-    for (let ri = 0; ri < 4; ri++) {
-      const base = R * (0.22 + ri * 0.18);
-      // Independent wobble decays; at high c the ring breathes with core
-      const indWobble  = Math.sin(t * (0.8 - c * 0.4) + ri * 1.4) * 4 * (1 - c);
-      const breathSync = Math.sin(t * breathCycle + ri * 0.2) * R * 0.018 * c;
-      const alpha = 0.04 + c * 0.12 + breathVal * c * 0.06;
+    // ── Rings: nested shells with depth hierarchy ──────────────────────
+    // Inner rings are heavier; outer rings are faint traces.
+    // Wobble decays with coherence — rings stabilise as system locks in.
+    const ringDefs = [
+      { frac: 0.28, wt: 1.0 },   // innermost — heaviest
+      { frac: 0.46, wt: 0.65 },
+      { frac: 0.65, wt: 0.40 },
+      { frac: 0.85, wt: 0.20 },  // outermost — barely-there trace
+    ];
+    for (let ri = 0; ri < ringDefs.length; ri++) {
+      const { frac, wt } = ringDefs[ri];
+      const base       = R * frac;
+      const wobble     = Math.sin(t * (0.7 - c * 0.3) + ri * 1.6) * 3.5 * (1 - c);
+      const breathSync = Math.sin(t * breathCycle + ri * 0.3) * R * 0.016 * c;
+      const alpha = (0.13 + c * 0.16 + breathVal * c * 0.06) * wt;
       ctx.beginPath();
-      ctx.strokeStyle = `rgba(26,26,26,${alpha.toFixed(3)})`;
-      ctx.lineWidth   = 0.6 + c * 0.5;
-      ctx.arc(cx, cy, base + indWobble + breathSync, 0, Math.PI * 2);
+      ctx.strokeStyle = K(alpha.toFixed(3));
+      ctx.lineWidth   = (0.7 + c * 0.5) * wt;
+      ctx.arc(cx, cy, base + wobble + breathSync, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    // ── Flash ring (threshold crossing) ─────────────────────────────
+    // ── Flash ring ─────────────────────────────────────────────────────
     if (flash > 0) {
       ctx.beginPath();
-      ctx.strokeStyle = `rgba(26,26,26,${(flash * 0.45).toFixed(3)})`;
-      ctx.lineWidth   = 1 + flash * 2.5;
-      ctx.arc(cx, cy, R * 0.48 + flash * R * 0.12, 0, Math.PI * 2);
+      ctx.strokeStyle = K((flash * 0.32).toFixed(3));
+      ctx.lineWidth   = 0.8 + flash * 2;
+      ctx.arc(cx, cy, R * 0.50 + flash * R * 0.12, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    // ── Lock-in wave: radial firefly propagation ─────────────────────
-    // When lockWave > 0, a bright pulse sweeps outward from core
-    // through each node in sequence, indexed by angular position.
-    // Each node's flash delay = its angle / (2π).
+    // ── Lock-in wave ───────────────────────────────────────────────────
     const lockNodeFlash = new Array(N_NODES).fill(0);
     if (lockWave > 0) {
-      // Draw the propagating ring
       const waveR = R * 0.15 + lockWave * R * 0.85;
-      const waveAlpha = Math.max(0, (1 - lockWave) * 0.5);
       ctx.beginPath();
-      ctx.strokeStyle = `rgba(26,26,26,${waveAlpha.toFixed(3)})`;
-      ctx.lineWidth   = 2 + (1 - lockWave) * 3;
-      ctx.arc(cx, cy, waveR, 0, Math.PI * 2);
-      ctx.stroke();
-      // Calculate per-node flash based on wave proximity
+      ctx.strokeStyle = K((Math.max(0, (1 - lockWave) * 0.30)).toFixed(3));
+      ctx.lineWidth   = 0.8 + (1 - lockWave) * 1.5;
+      ctx.arc(cx, cy, waveR, 0, Math.PI * 2); ctx.stroke();
       for (let i = 0; i < N_NODES; i++) {
-        const nodeDelay  = i / N_NODES;   // 0..1, angular order
-        const waveFront  = lockWave;
-        const dist       = Math.abs(waveFront - nodeDelay);
-        lockNodeFlash[i] = Math.max(0, 1 - dist * N_NODES * 1.2);
+        lockNodeFlash[i] = Math.max(0, 1 - Math.abs(lockWave - i / N_NODES) * N_NODES * 1.2);
       }
     }
 
-    // ── Nodes ────────────────────────────────────────────────────────
+    // ── Nodes: two shells with counter-rotation ────────────────────────
+    // Inner 4 nodes orbit closer, rotate clockwise.
+    // Outer 4 nodes orbit further, rotate counter-clockwise.
+    // This gives the classic atom aesthetic — nested shells moving independently.
     const sharedHeart = HEART_BASE;
-    const sharedPhase = t * sharedHeart * Math.PI * 2;   // common beat clock
-    const baseOrbit   = t * ORBIT_SPEED;
+    const sharedPhase = t * sharedHeart * Math.PI * 2;
 
     for (let i = 0; i < N_NODES; i++) {
-      const a = i * Math.PI * 2 / N_NODES;
+      const shell = i < N_NODES / 2 ? 0 : 1;  // 0 = inner, 1 = outer
 
-      // Individual heartbeat — frequency entrained toward shared as c rises
-      const ownHz  = nodeOwnHz[i];
-      const hz     = ownHz * (1 - c) + sharedHeart * c;
+      // Shell radii: inner orbits at ~42%, outer at ~62% of R
+      const baseOrbitR = shell === 0
+        ? R * (0.42 + Math.sin(t * 0.12 + i) * 0.04 * (1 - c))
+        : R * (0.62 + Math.sin(t * 0.09 + i) * 0.04 * (1 - c));
+
+      // Counter-rotation: inner goes forward, outer goes back
+      const rotDir  = shell === 0 ? 1 : -1;
+      const rotRate = shell === 0 ? ORBIT_SPEED : ORBIT_SPEED * 0.7;
+
+      // At low c: each node has its own angular speed (fragmented).
+      // At high c: all nodes in a shell rotate together.
+      const a           = i * Math.PI * 2 / (N_NODES / 2);  // angle within shell
+      const ownRate     = rotRate * (0.85 + (i % 4) * 0.08);
+      const sharedRate  = rotRate;
+      const orbitAngle  = a + rotDir * t * (ownRate * (1 - c) + sharedRate * c);
+
+      // Heartbeat: each node's own phase, entrained toward shared as c rises
+      const ownHz    = nodeOwnHz[i];
+      const hz       = ownHz * (1 - c) + sharedHeart * c;
       const rawPhase = t * hz * Math.PI * 2;
-
-      // Phase correction from taps: pulls rawPhase toward sharedPhase
       const phaseDiff = sharedPhase - rawPhase;
       const corrected = rawPhase + phaseDiff * nodePhaseCorrection[i];
-      const heartbeat = Math.sin(corrected) * 0.5 + 0.5;   // 0..1
-
-      // Decay correction toward 0 (correction wears off without taps)
+      const heartbeat = Math.sin(corrected) * 0.5 + 0.5;
       nodePhaseCorrection[i] = Math.max(0, nodePhaseCorrection[i] - 0.0004);
 
-      // Orbit: independent at c=0, unified at c=1
-      const ownOrbit   = t * (0.18 + i * 0.025);
-      const orbitAngle = a + ownOrbit * (1 - c) + baseOrbit * c;
-
-      // Radial scatter collapses; at high c nodes breathe radially together
-      const scatter    = R * 0.10 * (1 - c);
-      const breathSync = Math.sin(t * breathCycle + i * 0.1) * R * 0.028 * c;
-      const orbitR     = R * 0.50
-                       + Math.sin(rawPhase * 0.5 + i) * scatter
-                       + breathSync;
+      // Radial scatter collapses with coherence
+      const scatter = R * 0.06 * (1 - c);
+      const orbitR  = baseOrbitR + Math.sin(rawPhase * 0.5 + i) * scatter;
 
       const nx = cx + Math.cos(orbitAngle) * orbitR;
       const ny = cy + Math.sin(orbitAngle) * orbitR;
 
-      // Connection lines: more visible as c rises, pulse with heartbeat
-      const lineAlpha = 0.06 + c * 0.22 + heartbeat * c * 0.08;
-      ctx.beginPath();
-      ctx.strokeStyle = `rgba(26,26,26,${lineAlpha.toFixed(3)})`;
-      ctx.lineWidth   = 0.5 + c * 0.7 + heartbeat * c * 0.3;
-      ctx.moveTo(cx, cy); ctx.lineTo(nx, ny); ctx.stroke();
+      // ── Curved spoke: quadratic bezier from centre, bowing sideways ──
+      // Control point offset perpendicular to the spoke direction.
+      const spokeAngle = Math.atan2(ny - cy, nx - cx);
+      const bow        = R * 0.12 * (1 - c * 0.7) * (i % 2 === 0 ? 1 : -1);
+      const cpx = cx + Math.cos(orbitAngle) * orbitR * 0.5 + Math.cos(spokeAngle + Math.PI / 2) * bow;
+      const cpy = cy + Math.sin(orbitAngle) * orbitR * 0.5 + Math.sin(spokeAngle + Math.PI / 2) * bow;
 
-      // Node-to-next connection at high coherence (unified ring)
+      const lineAlpha = 0.16 + c * 0.26 + heartbeat * c * 0.10;
+      ctx.beginPath();
+      ctx.strokeStyle = K(lineAlpha.toFixed(3));
+      ctx.lineWidth   = 0.5 + c * 0.5;
+      ctx.moveTo(cx, cy);
+      ctx.quadraticCurveTo(cpx, cpy, nx, ny);
+      ctx.stroke();
+
+      // ── Node-to-adjacent connection within shell at high coherence ────
       if (c > 0.55) {
-        const nextA   = (i + 1) * Math.PI * 2 / N_NODES;
-        const nextOrbit = a + (nextA - a) + ownOrbit * (1 - c) + baseOrbit * c;
-        const nx2 = cx + Math.cos(nextOrbit + (2 * Math.PI / N_NODES)) * orbitR;
-        const ny2 = cy + Math.sin(nextOrbit + (2 * Math.PI / N_NODES)) * orbitR;
+        const nextI   = shell === 0 ? (i + 1) % 4 : 4 + (i - 4 + 1) % 4;
+        const nextA   = nextI * Math.PI * 2 / (N_NODES / 2);
+        const nextOrb = nextA + rotDir * t * (ownRate * (1 - c) + sharedRate * c);
+        const nx2 = cx + Math.cos(nextOrb) * orbitR;
+        const ny2 = cy + Math.sin(nextOrb) * orbitR;
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(26,26,26,${((c - 0.55) * 0.35).toFixed(3)})`;
+        ctx.strokeStyle = K(((c - 0.55) * 0.30).toFixed(3));
         ctx.lineWidth   = 0.5;
         ctx.moveTo(nx, ny); ctx.lineTo(nx2, ny2); ctx.stroke();
       }
 
-      // Node dot: pulses with heartbeat, flashes with lock-in wave
-      const flash2  = lockNodeFlash[i];
-      const dotBase = R * 0.022;
-      const dotPulse = dotBase * (1 + heartbeat * (0.3 + c * 0.4));
-      const dotR    = dotPulse + flash2 * dotBase * 2;
-      const dotAlpha = 0.28 + c * 0.55 + heartbeat * c * 0.12 + flash2 * 0.4;
+      // ── Node dot with soft halo ────────────────────────────────────
+      const flash2   = lockNodeFlash[i];
+      const dotBase  = R * (shell === 0 ? 0.026 : 0.020);   // inner nodes slightly larger
+      const dotPulse = dotBase * (1 + heartbeat * (0.35 + c * 0.35));
+      const dotR     = dotPulse + flash2 * dotBase;
+      const dotAlpha = 0.42 + c * 0.50 + heartbeat * c * 0.12 + flash2 * 0.22;
+
+      // Halo: soft radial gradient behind the dot
+      const haloR = dotR * 4.5;
+      const halo  = ctx.createRadialGradient(nx, ny, 0, nx, ny, haloR);
+      halo.addColorStop(0, K((dotAlpha * 0.22).toFixed(3)));
+      halo.addColorStop(1, K(0));
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.arc(nx, ny, haloR, 0, Math.PI * 2); ctx.fill();
+
+      // Solid dot
       ctx.beginPath();
-      ctx.fillStyle = `rgba(26,26,26,${Math.min(0.98, dotAlpha).toFixed(3)})`;
-      ctx.arc(nx, ny, dotR, 0, Math.PI * 2);
+      ctx.fillStyle = K(Math.min(0.92, dotAlpha).toFixed(3));
+      ctx.arc(nx, ny, Math.max(0.8, dotR), 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // ── Core: breathes at 5–6/min; grows and stabilises with coherence ──
-    // At high c the breath is deep and visible; at low c it's a faint flutter.
-    const breathDepth = 0.015 + c * 0.040;   // breath amplitude grows with c
-    const coreR = R * 0.052
-                + R * breathDepth * breathVal   // inhale expands the core
-                + R * 0.095 * c;               // grows with coherence
+    // ── Symmetry layer ─────────────────────────────────────────────────
+    // A mirrored reflection of the nodes, reflected across the vertical axis.
+    // At c=0 it's invisible. As coherence rises it fades in, so the system
+    // visually "finds" bilateral symmetry as it synchronises.
+    // At Sustained Flow both layers are equal weight — perfectly balanced.
+    if (c > 0.05) {
+      const symAlpha = c * c;   // quadratic — appears slowly then snaps in
+      for (let i = 0; i < N_NODES; i++) {
+        const shell    = i < N_NODES / 2 ? 0 : 1;
+        const baseOrbitR = shell === 0
+          ? R * (0.42 + Math.sin(t * 0.12 + i) * 0.04 * (1 - c))
+          : R * (0.62 + Math.sin(t * 0.09 + i) * 0.04 * (1 - c));
+        const rotDir   = shell === 0 ? 1 : -1;
+        const rotRate  = shell === 0 ? ORBIT_SPEED : ORBIT_SPEED * 0.7;
+        const a        = i * Math.PI * 2 / (N_NODES / 2);
+        const ownRate  = rotRate * (0.85 + (i % 4) * 0.08);
+        const orbitAngle = a + rotDir * t * (ownRate * (1 - c) + rotRate * c);
 
-    // Soft glow — larger and more luminous as c rises
-    const glowR = coreR * (2.5 + c * 1.5);
+        const ownHz    = nodeOwnHz[i];
+        const hz       = ownHz * (1 - c) + HEART_BASE * c;
+        const rawPhase = t * hz * Math.PI * 2;
+        const scatter  = R * 0.06 * (1 - c);
+        const orbitR   = baseOrbitR + Math.sin(rawPhase * 0.5 + i) * scatter;
+
+        const nx = cx + Math.cos(orbitAngle) * orbitR;
+        const ny = cy + Math.sin(orbitAngle) * orbitR;
+
+        // Mirror: reflect x across vertical centre axis
+        const mx = cx - (nx - cx);
+        const my = ny;
+
+        // Mirrored spoke — curved in opposite bow direction
+        const mirrorSpokeAngle = Math.atan2(my - cy, mx - cx);
+        const bow = R * 0.12 * (1 - c * 0.7) * (i % 2 === 0 ? -1 : 1);
+        const cpx = cx + Math.cos(mirrorSpokeAngle) * orbitR * 0.5 + Math.cos(mirrorSpokeAngle + Math.PI / 2) * bow;
+        const cpy = cy + Math.sin(mirrorSpokeAngle) * orbitR * 0.5 + Math.sin(mirrorSpokeAngle + Math.PI / 2) * bow;
+
+        const lineAlpha = (0.16 + c * 0.26) * symAlpha;
+        ctx.beginPath();
+        ctx.strokeStyle = K(lineAlpha.toFixed(3));
+        ctx.lineWidth   = 0.5 + c * 0.5;
+        ctx.moveTo(cx, cy);
+        ctx.quadraticCurveTo(cpx, cpy, mx, my);
+        ctx.stroke();
+
+        // Mirrored dot
+        const dotBase  = R * (shell === 0 ? 0.026 : 0.020);
+        const dotR     = dotBase * (1 + 0.35 * c);
+        const dotAlpha = (0.42 + c * 0.50) * symAlpha;
+        const haloR    = dotR * 4.5;
+        const halo     = ctx.createRadialGradient(mx, my, 0, mx, my, haloR);
+        halo.addColorStop(0, K((dotAlpha * 0.22).toFixed(3)));
+        halo.addColorStop(1, K(0));
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(mx, my, haloR, 0, Math.PI * 2); ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = K(Math.min(0.92, dotAlpha).toFixed(3));
+        ctx.arc(mx, my, Math.max(0.8, dotR), 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // ── Core: breathes, grows with coherence ───────────────────────────
+    const breathDepth = 0.012 + c * 0.030;
+    const coreR = R * 0.040 + R * breathDepth * breathVal + R * 0.075 * c;
+
+    const glowR = coreR * (3.5 + c * 1.5);
     const glow  = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
-    glow.addColorStop(0, `rgba(26,26,26,${(0.08 + c * 0.28 + breathVal * c * 0.10).toFixed(3)})`);
-    glow.addColorStop(1, 'rgba(26,26,26,0)');
+    glow.addColorStop(0, K((0.12 + c * 0.18 + breathVal * c * 0.06).toFixed(3)));
+    glow.addColorStop(1, K(0));
     ctx.fillStyle = glow;
     ctx.beginPath(); ctx.arc(cx, cy, glowR, 0, Math.PI * 2); ctx.fill();
 
-    // Solid core
-    const coreAlpha = 0.38 + c * 0.52 + breathVal * 0.06;
+    const coreAlpha = 0.38 + c * 0.28 + breathVal * 0.07;
     ctx.beginPath();
-    ctx.fillStyle = `rgba(26,26,26,${Math.min(0.98, coreAlpha).toFixed(3)})`;
+    ctx.fillStyle = K(Math.min(0.72, coreAlpha).toFixed(3));
     ctx.arc(cx, cy, coreR, 0, Math.PI * 2); ctx.fill();
-  }
-
-  // ── Notes Flow tile animation ──────────────────────────────────────
-  const nfCanvas = document.getElementById('nf-tile-canvas');
-  let nfT = 0, nfLastTs = 0, nfRafId = null, nfRunning = true;
-  if (nfCanvas) {
-    const nfCtx = nfCanvas.getContext('2d');
-    if (typeof IntersectionObserver !== 'undefined') {
-      new IntersectionObserver(en => { nfRunning = en[0].isIntersecting; if (nfRunning && !nfRafId) nfRafId = requestAnimationFrame(nfFrame); }, { threshold: 0.1 }).observe(nfCanvas);
-    }
-    function nfFrame(ts) {
-      nfRafId = null; if (!nfRunning) return;
-      const dt = nfLastTs ? Math.min(50, ts - nfLastTs) / 1000 : 0.016;
-      nfLastTs = ts; nfT += dt;
-      nfCtx.clearRect(0, 0, 220, 220);
-      nfCtx.font = '8px ui-monospace,monospace';
-      nfCtx.fillStyle = 'rgba(26,26,26,0.26)';
-      nfCtx.fillText('IN PROGRESS', 18, 32);
-      nfCtx.font = '300 38px Spectral,Georgia,serif';
-      nfCtx.fillStyle = 'rgba(26,26,26,0.80)';
-      nfCtx.fillText('Notes', 18, 78); nfCtx.fillText('Flow', 18, 116);
-      const ls = [{ y:144,w:0.72,p:0.0 },{ y:156,w:0.55,p:0.4 },{ y:168,w:0.80,p:0.8 },{ y:180,w:0.45,p:1.2 },{ y:192,w:0.65,p:1.6 }];
-      for (const l of ls) { const pulse = 0.7 + Math.sin(nfT * 0.4 + l.p) * 0.3; nfCtx.fillStyle = `rgba(26,26,26,${(0.08 + pulse * 0.06).toFixed(3)})`; nfCtx.fillRect(18, l.y, (184 * l.w * pulse)|0, 1); }
-      nfRafId = requestAnimationFrame(nfFrame);
-    }
-    nfRafId = requestAnimationFrame(nfFrame);
   }
 
   // ── Resonance tile preview ─────────────────────────────────────────
   const resTileCanvas = document.getElementById('resonance-canvas');
   let resT = 0, resLastTs = 0, resRafId = null, resRunning = true;
   if (resTileCanvas) {
+    const dpr = window.devicePixelRatio || 1;
+    resTileCanvas.width  = 110 * dpr;
+    resTileCanvas.height = 110 * dpr;
+    resTileCanvas.style.width  = '110px';
+    resTileCanvas.style.height = '110px';
     const resCtx = resTileCanvas.getContext('2d');
+    resCtx.scale(dpr, dpr);
     if (typeof IntersectionObserver !== 'undefined') {
       new IntersectionObserver(en => { resRunning = en[0].isIntersecting; if (resRunning && !resRafId) resRafId = requestAnimationFrame(resFrame); }, { threshold: 0.1 }).observe(resTileCanvas);
     }
@@ -2104,16 +2214,16 @@ by shared calendar event, overlapping active editing sessions, or identical link
       const dt = resLastTs ? Math.min(50, ts - resLastTs) / 1000 : 0.016;
       resLastTs = ts; resT += dt;
       if (!stageOpen) coherence = Math.max(0, coherence - DECAY_RATE * dt * 0.1);
-      drawResonance(resCtx, 110, 110, 86, coherence, resT, resT, 0);
+      drawResonance(resCtx, 55, 55, 48, Math.max(coherence, 0.15), resT, resT, 0);
       resRafId = requestAnimationFrame(resFrame);
     }
     resRafId = requestAnimationFrame(resFrame);
   }
 
   // ── Stage ──────────────────────────────────────────────────────────
-  const icStage    = document.getElementById('ic-stage');
-  const flipScene  = document.getElementById('ic-flip-scene');
-  const flipInner  = document.getElementById('ic-flip-inner');
+  const icStage     = document.getElementById('ic-stage');
+  const icPlayfield = document.getElementById('ic-playfield');
+  const icTitle     = document.getElementById('ic-stage-title');
   const stageCanvas = document.getElementById('ic-stage-canvas');
   const stateLabel  = document.getElementById('ic-state-label');
   const interHint   = document.getElementById('ic-interaction-hint');
@@ -2132,14 +2242,14 @@ by shared calendar event, overlapping active editing sessions, or identical link
   let nfStageT     = 0, nfStageLastTs = 0;
   let descRevealed = false;
 
-  const SC = 180, SR = 152;
+  // 560px canvas — larger field so the animation has room to breathe
+  const SC = 280, SR = 238;
 
   function openStage(tile) {
     if (stageOpen) return;
     stageOpen    = true;
-    autoFlipFired = false;
-    descRevealed  = false;
-    activeTile    = tile.id === 'ic-tile-02' ? 'res' : 'nf';
+    descRevealed = false;
+    activeTile   = tile.id === 'ic-tile-02' ? 'res' : 'nf';
 
     const d = tile.dataset;
     if (backEyebrow) backEyebrow.textContent = d.eyebrow || '';
@@ -2147,9 +2257,13 @@ by shared calendar event, overlapping active editing sessions, or identical link
     if (backSub)     backSub.textContent     = d.sub     || '';
     if (backBody)    backBody.textContent    = d.body    || '';
     if (descOverlay) descOverlay.classList.remove('revealed');
+    if (icTitle)     icTitle.textContent     = activeTile === 'res' ? 'resonance' : 'notes flow';
 
     if (stateLabel) stateLabel.style.display = activeTile === 'res' ? '' : 'none';
-    if (interHint)  interHint.style.display  = activeTile === 'res' ? '' : 'none';
+    if (interHint) {
+      interHint.style.display = activeTile === 'res' ? '' : 'none';
+      interHint.style.opacity = '';
+    }
 
     updateStateLabel(coherence, true);
     icStage.classList.add('open');
@@ -2188,20 +2302,23 @@ by shared calendar event, overlapping active editing sessions, or identical link
     if (!stageOpen) return;
     if (icScrollTimer) clearTimeout(icScrollTimer);
     icScrollTimer = setTimeout(() => {
-      const root = document.getElementById('ic-root');
-      if (!root) return;
-      const r = root.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > window.innerHeight) closeStage();
+      // Watch either tile — if both are off-screen, close the stage.
+      const t1 = document.getElementById('ic-tile-01');
+      const t2 = document.getElementById('ic-tile-02');
+      const rects = [t1, t2].filter(Boolean).map(el => el.getBoundingClientRect());
+      const allGone = rects.every(r => r.bottom < 0 || r.top > window.innerHeight);
+      if (allGone) closeStage();
     }, 80);
   }, { passive: true });
 
-  // Canvas click: bump coherence AND inject phase-stabilisation impulse
   if (stageCanvas) {
     stageCanvas.addEventListener('click', (e) => {
-      if (activeTile !== 'res') return;
       e.stopPropagation();
-      coherence = Math.min(1, coherence + CLICK_INCREMENT);
-      tapCorrect();   // snap nodes toward shared phase
+      if (activeTile === 'res') {
+        coherence = Math.min(1, coherence + CLICK_INCREMENT);
+        tapCorrect();
+      }
+      // NF: no canvas interaction
     });
   }
 
@@ -2244,11 +2361,6 @@ by shared calendar event, overlapping active editing sessions, or identical link
       if (descOverlay) descOverlay.classList.add('revealed');
       if (interHint)   interHint.style.opacity = '0';
     }
-    if (coherence < 0.75 && descRevealed) {
-      descRevealed = false;
-      if (descOverlay) descOverlay.classList.remove('revealed');
-      if (interHint)   interHint.style.opacity = '';
-    }
 
     if (stageCanvas) {
       const ctx = stageCanvas.getContext('2d');
@@ -2259,40 +2371,132 @@ by shared calendar event, overlapping active editing sessions, or identical link
     stageRafId = requestAnimationFrame(resStageFrame);
   }
 
-  // ── Notes Flow stage loop ──────────────────────────────────────────
+  // ── Notes Flow tile — looping airplane ────────────────────────────
+  // Plane follows a path that weaves in and out of the tile circle —
+  // radius oscillates so it crosses the ring naturally a few times per loop.
+  (function () {
+    const canvas = document.getElementById('nf-tile-canvas');
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = 110 * dpr;
+    canvas.height = 110 * dpr;
+    canvas.style.width  = '110px';
+    canvas.style.height = '110px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const CX = 55, CY = 55, S = 110;
+    const SPEED = 58;    // px/s — unhurried glide
+    const TRAIL = 120;
+
+    // Straight-line flight with edge wrapping.
+    // The plane flies at a fixed angle, exits an edge, reappears on the opposite side.
+    // Each pass rotates the angle slightly so the tile gets covered gradually.
+    let px = 20, py = 30;
+    let angle = 0.42;          // radians — gentle diagonal
+    let vx = Math.cos(angle) * SPEED;
+    let vy = Math.sin(angle) * SPEED;
+    const ANGLE_DRIFT = 0.18;  // radians added each wrap
+
+    function wrap() {
+      // Wrap position to opposite edge, nudge angle slightly
+      if (px > S + 12) { px -= S + 24; angle += ANGLE_DRIFT; }
+      if (px < -12)    { px += S + 24; angle += ANGLE_DRIFT; }
+      if (py > S + 12) { py -= S + 24; angle += ANGLE_DRIFT; }
+      if (py < -12)    { py += S + 24; angle += ANGLE_DRIFT; }
+      vx = Math.cos(angle) * SPEED;
+      vy = Math.sin(angle) * SPEED;
+    }
+
+    let lastTs = 0;
+    const trail = [];
+    let rafId = null, running = true;
+
+    if (typeof IntersectionObserver !== 'undefined') {
+      new IntersectionObserver(en => {
+        running = en[0].isIntersecting;
+        if (running && !rafId) rafId = requestAnimationFrame(frame);
+      }, { threshold: 0.1 }).observe(canvas);
+    }
+
+    function drawPlane(x, y, heading, alpha) {
+      ctx.save();
+      ctx.translate(x, y); ctx.rotate(heading);
+      ctx.globalAlpha = alpha;
+      const inkC = document.body.classList.contains('nf-inverted') ? '230,229,224' : '26,26,26';
+      ctx.strokeStyle = `rgba(${inkC},1)`;
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      const sc = 0.50;
+      ctx.scale(sc, sc);
+      ctx.lineWidth = 1.1 / sc;
+      ctx.beginPath();
+      ctx.moveTo( 18,  0); ctx.lineTo(-12,  9);
+      ctx.lineTo( -6,  0); ctx.lineTo(-12, -9);
+      ctx.closePath(); ctx.stroke();
+      ctx.lineWidth = 0.7 / sc;
+      ctx.beginPath(); ctx.moveTo(18,0); ctx.lineTo(-6,0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-6,0); ctx.lineTo(-12,-4); ctx.stroke();
+      ctx.restore();
+    }
+
+    function frame(ts) {
+      rafId = null; if (!running) return;
+      const dt = lastTs ? Math.min(50, ts - lastTs) / 1000 : 0.016;
+      lastTs = ts;
+
+      px += vx * dt;
+      py += vy * dt;
+      wrap();
+
+      trail.push({ x: px, y: py });
+      if (trail.length > TRAIL) trail.shift();
+
+      ctx.clearRect(0, 0, S, S);
+
+      // Circle ring — drawn on canvas so it inverts with the page
+      const ringInk = document.body.classList.contains('nf-inverted')
+        ? 'rgba(230,229,224,0.45)' : 'rgba(26,26,26,0.45)';
+      ctx.beginPath();
+      ctx.strokeStyle = ringInk;
+      ctx.lineWidth   = 0.8;
+      ctx.arc(55, 55, 36, 0, Math.PI * 2);
+      ctx.stroke();
+
+      for (let i = 0; i < trail.length; i++) {
+        const age = i / (trail.length - 1);
+        const op  = age * age * 0.16;
+        if (op < 0.003) continue;
+        ctx.beginPath();
+        const trailInk = document.body.classList.contains('nf-inverted') ? '230,229,224' : '26,26,26';
+        ctx.fillStyle = `rgba(${trailInk},${op.toFixed(3)})`;
+        ctx.arc(trail[i].x, trail[i].y, 0.85 * age, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      drawPlane(px, py, angle, 0.80);
+      rafId = requestAnimationFrame(frame);
+    }
+
+    rafId = requestAnimationFrame(frame);
+  })();
+
+  // ── Notes Flow stage ───────────────────────────────────────────────
+  // Same open playfield as Resonance. Description is visible immediately
+  // — no interaction required since there's no animation to earn it.
+  // The title and field label do the work; the description is the content.
   function nfStageFrame(ts) {
     stageRafId = null;
     if (!stageOpen || activeTile !== 'nf') return;
-    const dt = nfStageLastTs ? Math.min(50, ts - nfStageLastTs) / 1000 : 0.016;
-    nfStageLastTs = ts; nfStageT += dt;
-    if (stageCanvas) {
-      const ctx = stageCanvas.getContext('2d');
-      ctx.clearRect(0, 0, 360, 360);
-      ctx.font = '300 76px Spectral,Georgia,serif';
-      ctx.fillStyle = 'rgba(26,26,26,0.80)';
-      ctx.fillText('Notes', 38, 118); ctx.fillText('Flow', 38, 194);
-      ctx.font = '9px ui-monospace,monospace';
-      ctx.fillStyle = 'rgba(26,26,26,0.28)';
-      ctx.fillText('IN PROGRESS · APPLE', 40, 60);
-      const ls = [
-        { y:228,w:0.68,p:0.0 },{ y:246,w:0.52,p:0.5 },
-        { y:264,w:0.78,p:1.0 },{ y:282,w:0.42,p:1.5 },
-        { y:300,w:0.60,p:2.0 },{ y:318,w:0.74,p:2.5 },
-      ];
-      for (const l of ls) {
-        const pulse = 0.7 + Math.sin(nfStageT * 0.35 + l.p) * 0.3;
-        ctx.fillStyle = `rgba(26,26,26,${(0.07 + pulse * 0.07).toFixed(3)})`;
-        ctx.fillRect(38, l.y, (284 * l.w * pulse)|0, 1);
-      }
-    }
-    // Notes Flow reveals description immediately on open
     if (!descRevealed) {
       descRevealed = true;
-      if (descOverlay) descOverlay.classList.add('revealed');
+      if (descOverlay) {
+        // Small delay so the stage fade-in completes before text appears
+        setTimeout(() => descOverlay.classList.add('revealed'), 280);
+      }
+      if (interHint) interHint.style.display = 'none';
     }
-    stageRafId = requestAnimationFrame(nfStageFrame);
   }
-
 })();
 </script>
 

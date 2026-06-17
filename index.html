@@ -105,8 +105,8 @@
   <div class="bio-wrap">
     <span class="bio-label">Background</span>
     <div class="bio-text">
-        <p>Berkeley trained product-designer, I specialize in UI/UX development and approach building as fluid & relational. I work on/in cognitive linguistics and apply this to both my creative and professional work. </p>
-              <p>Skills include coding in Python and R; training in neural network-modeling, chemistry, and economics. Operating at the intersection of fintech, e-commerce, and OTT, I design and ship digital experiences for public and private sector partners including: Numi Tea, The Product-Life Institute, Hopelab, SF Tech Council, The Schoolab, The School of Public Health (UC Berkeley), and The Paris School of International Affairs. It is the continuous, iterative ebb and flow of product design that excites me - building worlds by language, technology, sensibility, texture & color.</p>
+        <p>A Berkeley-trained product designer, I specialize in UI/UX development and approach building as fluid and relational. I work within cognitive linguistics and apply this lens to both my creative and professional projects.</p>
+              <p>Skills include Python, R, neural network modeling, chemistry, and economics. Across fintech, e-commerce, and OTT, I design and ship digital experiences for public and private sector partners including: Numi Tea, The Product-Life Institute, Hopelab, SF Tech Council, The Schoolab, The School of Public Health (UC Berkeley), and The Paris School of International Affairs. The ebb and flow of design excites me—building worlds with language, technology, sensibility, texture & color</p>
       </div>
     </div>
   </section>
@@ -296,275 +296,245 @@ window.addEventListener('scroll', ()=>{
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Terminal Contact Card</title>
- 
-  <!--
-    Requires Space Mono from Google Fonts.
-    Add this to your site's <head> if not already present:
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  -->
+  <title>Paul C. Ruback — Contact</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
- 
+
   <style>
     /* ============================================================
-       PASTE THIS ENTIRE <style> BLOCK INTO YOUR SITE'S CSS
+       CONTACT BRIEF — Paul C. Ruback
+       Drop .brief-wrap and everything below into your site CSS.
+       Requires Space Mono from Google Fonts.
        ============================================================ */
- 
-    /* --- Outer wrapper: mirrors your .gallery padding exactly -- */
-    .term-wrap {
-      padding: 0 3rem 4rem;
-      box-sizing: border-box;
-      width: 100%;
-    }
- 
-    @media (max-width: 900px) { .term-wrap { padding: 0 1.5rem 3rem; } }
-    @media (max-width: 500px) { .term-wrap { padding: 0 1rem 2rem;   } }
- 
-    /* --- Terminal card ----------------------------------------- */
-    .term {
-      width: 100%;
-      background: transparent;
-      border: 0.5px solid rgba(17, 17, 17, 0.12);
-      border-radius: 14px;
-      overflow: hidden;
+
+    .brief-wrap {
       font-family: 'Space Mono', monospace;
+      border: 1.5px solid #111;
+      overflow: hidden;
+      width: 100%;
       box-sizing: border-box;
     }
- 
-    .term-inner {
-      padding: 28px 32px;
-    }
- 
-    /* --- Window chrome ----------------------------------------- */
-    .term-winbar {
+
+    /* --- Header ------------------------------------------------ */
+    .brief-header {
+      border-bottom: 1.5px solid #111;
+      padding: 10px 20px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      margin-bottom: 24px;
+      justify-content: space-between;
     }
- 
-    .term-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
- 
-    .term-wintitle {
+
+    .brief-header-label {
       font-size: 10px;
+      letter-spacing: 0.18em;
       color: #999;
-      margin-left: 8px;
-      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
- 
-    /* --- Prompt row -------------------------------------------- */
-    .term-prompt {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
+
+    .brief-header-id {
+      font-size: 10px;
+      letter-spacing: 0.12em;
       color: #999;
-      margin-bottom: 8px;
     }
- 
-    .term-ps { color: #79c0ff; }  /* blue prompt symbol */
- 
-    /* --- Name -------------------------------------------------- */
-    .term-name {
-      font-size: 28px;
+
+    /* --- Name block -------------------------------------------- */
+    .brief-name-row {
+      padding: 28px 20px 24px;
+      border-bottom: 1.5px solid #111;
+      position: relative;
+    }
+
+    .brief-field-num {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: #999;
+      margin-bottom: 6px;
+    }
+
+    .brief-name {
+      font-size: 48px;
       font-weight: 700;
       color: #111;
-      letter-spacing: -0.01em;
-      line-height: 1.2;
-      margin-bottom: 6px;
-      opacity: 0;
-      animation: term-popin 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.8s forwards;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin: 0;
     }
- 
-    /* --- Role -------------------------------------------------- */
-    .term-role {
-      font-size: 11px;
+
+    .brief-role-stamp {
+      position: absolute;
+      bottom: 24px;
+      right: 20px;
+      font-size: 9px;
+      letter-spacing: 0.2em;
       color: #999;
-      letter-spacing: 0.1em;
-      margin-bottom: 24px;
-      opacity: 0;
-      animation: term-fade 0.4s ease 1.2s forwards;
+      text-transform: uppercase;
+      border: 1px solid #999;
+      padding: 4px 8px;
     }
- 
-    /* --- Divider ----------------------------------------------- */
-    .term-divider {
-      border: none;
-      border-top: 0.5px solid rgba(17, 17, 17, 0.08);
-      margin-bottom: 20px;
-    }
- 
+
     /* --- Contact grid ------------------------------------------ */
-    .term-contacts {
+    .brief-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px 24px;
+      grid-template-columns: 1fr 1fr;
     }
- 
-    @media (max-width: 900px) { .term-contacts { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 500px) { .term-contacts { grid-template-columns: 1fr; } }
- 
-    .term-row {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 11px;
-      opacity: 0;
-      animation: term-fade 0.4s ease forwards;
+
+    @media (max-width: 480px) {
+      .brief-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .brief-cell:nth-child(odd) {
+        border-right: none !important;
+        border-bottom: 1px solid #ddd !important;
+      }
+
+      .brief-cell:nth-last-child(-n+2) {
+        border-bottom: 1px solid #ddd !important;
+      }
+
+      .brief-cell:last-child {
+        border-bottom: none !important;
+      }
     }
- 
-    .term-row:nth-child(1) { animation-delay: 1.5s; }
-    .term-row:nth-child(2) { animation-delay: 1.8s; }
-    .term-row:nth-child(3) { animation-delay: 2.1s; }
-    .term-row:nth-child(4) { animation-delay: 2.4s; }
- 
-    /* add more rows? continue the pattern: 2.7s, 3.0s, etc. */
- 
-    .term-key {
+
+    .brief-cell {
+      padding: 16px 20px;
+      border-bottom: 1px solid #ddd;
+      box-sizing: border-box;
+    }
+
+    .brief-cell:nth-child(odd) {
+      border-right: 1.5px solid #111;
+    }
+
+    .brief-cell:nth-last-child(-n+2) {
+      border-bottom: none;
+    }
+
+    .brief-cell-num {
+      font-size: 9px;
+      letter-spacing: 0.14em;
       color: #999;
-      letter-spacing: 0.08em;
+      margin-bottom: 4px;
     }
- 
-    .term-val a {
+
+    .brief-cell-label {
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      color: #999;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .brief-cell-val {
       font-size: 12px;
+      font-weight: 700;
+      color: #111;
       text-decoration: none;
+      display: block;
+      word-break: break-all;
     }
- 
-    .term-val a:hover {
+
+    a.brief-cell-val:hover {
       text-decoration: underline;
     }
- 
-    .term-val-plain {
-      font-size: 12px;
-      color: #999;
-    }
- 
-    /* --- Footer blinking cursor -------------------------------- */
-    .term-footer {
-      margin-top: 24px;
-      padding-top: 16px;
-      border-top: 0.5px solid rgba(17, 17, 17, 0.08);
+
+    /* --- Footer ------------------------------------------------ */
+    .brief-footer {
+      border-top: 1.5px solid #111;
+      padding: 10px 20px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 12px;
+      justify-content: space-between;
     }
- 
-    .term-cursor {
-      display: inline-block;
-      width: 7px;
-      height: 14px;
+
+    .brief-footer-bar {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .brief-tick {
+      width: 18px;
+      height: 6px;
       background: #111;
-      vertical-align: middle;
-      animation: term-blink 1s step-end infinite;
     }
- 
-    /* --- Keyframes --------------------------------------------- */
-    @keyframes term-popin {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0);   }
+
+    .brief-tick.muted {
+      background: #ddd;
     }
- 
-    @keyframes term-fade {
-      to { opacity: 1; }
-    }
- 
-    @keyframes term-blink {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0; }
+
+    .brief-footer-status {
+      font-size: 9px;
+      letter-spacing: 0.16em;
+      color: #999;
+      text-transform: uppercase;
     }
   </style>
 </head>
 <body>
- 
-  <!->
- 
-  <div class="term-wrap">
-    <div class="term">
-      <div class="term-inner">
- 
-        <!-- window chrome -->
-        <div class="term-winbar">
-          <div class="term-dot" style="background:#ff5f57"></div>
-          <div class="term-dot" style="background:#febc2e"></div>
-          <div class="term-dot" style="background:#28c840"></div>
-          <span class="term-wintitle">:0</span>  <!-- ← EDIT THIS (or remove) -->
-        </div>
- 
-        <!-- shell prompt -->
-        <div class="term-prompt">
-          <span class="term-ps">~</span>
-          <span>./Let's connect</span>  <!-- ← EDIT THIS -->
-        </div>
- 
-        <!-- your name -->
-        <div class="term-name">
-          Paul C. Ruback <!-- ← EDIT THIS -->
-        </div>
- 
-        <!-- your role / tagline — keep uppercase for terminal feel -->
-        <div class="term-role">
-          DESIGN & STRATEGY <!-- ← EDIT THIS -->
-        </div>
- 
-        <hr class="term-divider" />
- 
-        <div class="term-contacts">
- 
-          <!-- EMAIL -->
-          <div class="term-row">
-            <span class="term-key">email</span>
-            <span class="term-val">
-              <a href="mailto:paulcruback@gmail.com" style="color:#79c0ff">
-                paulcruback@gmail.com  <!-- ← EDIT THIS -->
-              </a>
-            </span>
-          </div>
- 
-          <!-- GITHUB -->
-          <div class="term-row">
-            <span class="term-key">github</span>
-            <span class="term-val">
-              <a href="https://paul-ruback.github.io/" target="_blank" rel="noopener" style="color:#f0a050">
-                https://paul-ruback.github.io/  <!-- ← EDIT THIS -->
-              </a>
-            </span>
-          </div>
- 
-          <!-- LINKEDIN -->
-          <div class="term-row">
-            <span class="term-key">linkedin</span>
-            <span class="term-val">
-              <a href="https://linkedin.com/in/paulruback" target="_blank" rel="noopener" style="color:#f5c842">
-                linkedin.com/in/paulruback  <!-- ← EDIT THIS -->
-              </a>
-            </span>
-          </div>
- 
-          <!-- LOCATION — plain text, no link -->
-          <div class="term-row">
-            <span class="term-key">location</span>
-            <span class="term-val-plain">Paris & New York</span>  <!-- ← EDIT THIS -->
-          </div>
- 
-        </div>
- 
-        <!-- blinking cursor -->
-        <div class="term-footer">
-          <span class="term-ps">~</span>
-          <span class="term-cursor"></span>
-        </div>
- 
-      </div>
+
+  <div class="brief-wrap">
+
+    <div class="brief-header">
+      <span class="brief-header-label">Contact Brief — Rev. 01</span>  <!-- ← EDIT or remove -->
+      <span class="brief-header-id">PCR / 2025</span>  <!-- ← EDIT -->
     </div>
+
+    <div class="brief-name-row">
+      <div class="brief-field-num">01 — SUBJECT</div>
+      <div class="brief-name">Paul C.<br>Ruback</div>  <!-- ← EDIT -->
+      <div class="brief-role-stamp">Design &amp; Strategy</div>  <!-- ← EDIT -->
+    </div>
+
+    <div class="brief-grid">
+
+      <div class="brief-cell">
+        <div class="brief-cell-num">02</div>
+        <div class="brief-cell-label">Email</div>
+        <a href="mailto:paulcruback@gmail.com" class="brief-cell-val">
+          paulcruback@gmail.com  <!-- ← EDIT -->
+        </a>
+      </div>
+
+      <div class="brief-cell">
+        <div class="brief-cell-num">03</div>
+        <div class="brief-cell-label">Location</div>
+        <span class="brief-cell-val">Paris &amp; New York</span>  <!-- ← EDIT -->
+      </div>
+
+      <div class="brief-cell">
+        <div class="brief-cell-num">04</div>
+        <div class="brief-cell-label">GitHub</div>
+        <a href="https://paul-ruback.github.io/" target="_blank" rel="noopener" class="brief-cell-val">
+          paul-ruback.github.io  <!-- ← EDIT -->
+        </a>
+      </div>
+
+      <div class="brief-cell">
+        <div class="brief-cell-num">05</div>
+        <div class="brief-cell-label">LinkedIn</div>
+        <a href="https://linkedin.com/in/paulruback" target="_blank" rel="noopener" class="brief-cell-val">
+          linkedin.com/in/paulruback  <!-- ← EDIT -->
+        </a>
+      </div>
+
+    </div>
+
+    <div class="brief-footer">
+      <div class="brief-footer-bar">
+        <div class="brief-tick"></div>
+        <div class="brief-tick"></div>
+        <div class="brief-tick"></div>
+        <div class="brief-tick muted"></div>
+        <div class="brief-tick muted"></div>
+      </div>
+      <span class="brief-footer-status">Status: building</span>  <!-- ← EDIT -->
+    </div>
+
   </div>
- 
+
 </body>
 </html>

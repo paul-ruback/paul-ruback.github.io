@@ -39,42 +39,6 @@
     .gallery-item:hover img { transform:scale(1.02); }
     .gallery-item video { width:100%; display:block; transition:transform 0.5s ease; }
     .gallery-item:hover video { transform:scale(1.02); }
-  </style>
-</head>
-<body>
-
-  <!-- ── HEADER ── -->
-  <header>
-    <h1>studio</h1>
-    <span>Paul [Last Name]</span>
-  </header>
-
-  <!-- ── INTRO ── -->
-  <section class="intro">
-    <div class="intro-text">
-      <p class="intro-greeting">Hi! Paul here.</p>
-      <p>
-        I split my time between taking photos, film-making, tennis, and podcasts (Tetragrannaton/ Rick Ruben & Design Matters/ Debbie Millman are two I love!).
-      </p>
-      <p>
-      My design philosophy: the quality of your question determines the quality of your solution. "When I let go of what I am, I become what I might be." - Lao Tzu
-      </p>
-    </div>
-    <div class="intro-photo">
-      <img src="intro.png" alt="Portrait" />
-    </div>
-  </section>
-    
-    /* ── MASONRY GRID ── */
-    .gallery { columns:3; column-gap:12px; padding:0 3rem 4rem; }
-    @media (max-width:900px) { .gallery { columns:2; padding:0 1.5rem 3rem; } }
-    @media (max-width:500px) { .gallery { columns:1; padding:0 1rem 2rem; } }
-    .gallery-item { break-inside:avoid; margin-bottom:12px; overflow:hidden; cursor:zoom-in; background:#e8e6e1; }
-    .gallery-item img { width:100%; display:block; transition:transform 0.5s ease, opacity 0.3s; opacity:0; }
-    .gallery-item img.loaded { opacity:1; }
-    .gallery-item:hover img { transform:scale(1.02); }
-    .gallery-item video { width:100%; display:block; transition:transform 0.5s ease; }
-    .gallery-item:hover video { transform:scale(1.02); }
 
     /* ── BIO + CONTACT (two-column on desktop) ── */
     #sec-bio {
@@ -241,6 +205,22 @@
     <span id="photo-count"></span>
   </header>
 
+  <!-- ── INTRO ── -->
+  <section class="intro">
+    <div class="intro-text">
+      <p class="intro-greeting">Hi! Paul here.</p>
+      <p>
+        I split my time between taking photos, film-making, tennis, and podcasts (Tetragrammaton / Rick Rubin &amp; Design Matters / Debbie Millman are two I love!).
+      </p>
+      <p>
+        My design philosophy: the quality of your question determines the quality of your solution. "When I let go of what I am, I become what I might be." — Lao Tzu
+      </p>
+    </div>
+    <div class="intro-photo">
+      <img src="intro.png" alt="Portrait" />
+    </div>
+  </section>
+
   <!-- WALL -->
   <section id="sec-wall">
     <div class="gallery" id="gallery"></div>
@@ -251,9 +231,9 @@
     <div class="bio-col">
       <span class="bio-label">Background</span>
       <div class="bio-text">
-        <p></p>A Berkeley-trained product designer, I specialize in the architecture of human-system interactions and approach structural building as fluid and relational. I operate at the intersection of cognitive linguistics, system design, and behavioral psychology.</p>
-<p>My skills include Python, R, neural network modeling, behavioral science, and economics - I use these to deeply understand human intent. I am a product designer because I see the world’s frameworks as a conversation of questions to be answered. My professional background is in the structuring of complex systems: water infrastructure, financial institutions, and digital literacy.</p>
-<p>The building process of stress-testing, refining, and modifying is where I thrive. I believe thoughtful design is the connective tissue between individuals and the spaces they inhabit.</p>
+        <p>A Berkeley-trained product designer, I specialize in the architecture of human-system interactions and approach structural building as fluid and relational. I operate at the intersection of cognitive linguistics, system design, and behavioral psychology.</p>
+        <p>My skills include Python, R, neural network modeling, behavioral science, and economics - I use these to deeply understand human intent. I am a product designer because I see the world's frameworks as a conversation of questions to be answered. My professional background is in the structuring of complex systems: water infrastructure, financial institutions, and digital literacy.</p>
+        <p>The building process of stress-testing, refining, and modifying is where I thrive. I believe thoughtful design is the connective tissue between individuals and the spaces they inhabit.</p>
       </div>
     </div>
 
@@ -437,4 +417,5 @@
     });
   </script>
 </body>
+</html>
 </html>

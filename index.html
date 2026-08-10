@@ -18,7 +18,7 @@
     header h1 { font-size:1rem; font-weight:400; letter-spacing:0.04em; color:#111; }
     header span { font-size:0.8rem; color:#999; letter-spacing:0.04em; }
     /* ── INTRO ── */
-    .intro { display:flex; align-items:center; gap:2rem; padding:0 3rem 3rem; max-width:640px; }
+    .intro { display:flex; align-items:center; justify-content:center; gap:2rem; padding:0 3rem 3rem; max-width:640px; margin:0 auto; }
     .intro-text { font-family:'Spectral', serif; font-weight:300; font-size:0.95rem; line-height:1.6; color:#333; }
     .intro-text p { margin-bottom:0.9rem; }
     .intro-text p:last-child { margin-bottom:0; }
@@ -26,94 +26,61 @@
     .intro-photo { flex-shrink:0; width:150px; height:150px; overflow:hidden; background:#e8e6e1; }
     .intro-photo img { width:100%; height:100%; object-fit:cover; display:block; }
     @media (max-width:500px) {
-      .intro { flex-direction:column-reverse; align-items:flex-start; padding:0 1rem 2rem; }
+      .intro { flex-direction:column-reverse; align-items:center; padding:0 1rem 2rem; }
       .intro-photo { width:110px; height:110px; }
     }
     /* ── MASONRY GRID ── */
-    .gallery { columns:3; column-gap:12px; padding:0 3rem 4rem; }
+    .gallery { columns:3; column-gap:16px; padding:0 3rem 4rem; }
     @media (max-width:900px) { .gallery { columns:2; padding:0 1.5rem 3rem; } }
     @media (max-width:500px) { .gallery { columns:1; padding:0 1rem 2rem; } }
-    .gallery-item { break-inside:avoid; margin-bottom:12px; overflow:hidden; cursor:zoom-in; background:#e8e6e1; }
-    .gallery-item img { width:100%; display:block; transition:transform 0.5s ease, opacity 0.3s; opacity:0; }
+    .gallery-item { break-inside:avoid; margin-bottom:16px; overflow:hidden; cursor:zoom-in; background:#e8e6e1; }
+    .gallery-item img { width:100%; display:block; transition:transform 0.6s ease, opacity 0.3s; opacity:0; }
     .gallery-item img.loaded { opacity:1; }
-    .gallery-item:hover img { transform:scale(1.02); }
-    .gallery-item video { width:100%; display:block; transition:transform 0.5s ease; }
-    .gallery-item:hover video { transform:scale(1.02); }
+    .gallery-item:hover img { transform:scale(1.015); }
+    .gallery-item video { width:100%; display:block; transition:transform 0.6s ease; }
+    .gallery-item:hover video { transform:scale(1.015); }
 
-    /* ── BIO + CONTACT (two-column on desktop) ── */
+    /* ── BIO + CONTACT (inline, no card/border) ── */
     #sec-bio {
       padding:6rem 3rem;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:4rem;
-      align-items:start;
       border-top:0.5px solid rgba(0,0,0,0.1);
     }
     @media (max-width:900px) {
-      #sec-bio { grid-template-columns:1fr; gap:3rem; padding:4rem 1.5rem; }
+      #sec-bio { padding:4rem 1.5rem; }
     }
     @media (max-width:500px) {
-      #sec-bio { padding:3rem 1rem; gap:2.5rem; }
+      #sec-bio { padding:3rem 1rem; }
     }
 
-    .bio-col {}
-    .bio-label { font-family:'Spectral',Georgia,serif; font-size:9px; font-weight:300; letter-spacing:0.18em; text-transform:uppercase; color:rgba(0,0,0,0.3); margin-bottom:1.5rem; display:block; }
-    .bio-text { font-family:'Spectral',Georgia,serif; font-size:15px; font-weight:300; line-height:1.8; color:rgba(0,0,0,0.75); }
-    .bio-text p + p { margin-top:1.2rem; }
-
-    /* ── CONTACT CARD (right col) ── */
-    .contact-col {}
-    .brief-wrap {
-      font-family:'Space Mono',monospace;
-      border:1.5px solid #111;
-      overflow:hidden;
-      width:100%;
-      box-sizing:border-box;
+    .bio-block { max-width:640px; }
+    .bio-name {
+      font-family:'Spectral', serif;
+      font-weight:300;
+      font-size:34px;
+      letter-spacing:-0.02em;
+      color:#111;
+      margin:0 0 18px;
     }
-    .brief-header {
-      border-bottom:1.5px solid #111;
-      padding:10px 20px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
+    .bio-text {
+      font-family:'Spectral', serif;
+      font-weight:300;
+      font-size:14px;
+      line-height:1.8;
+      color:rgba(0,0,0,0.75);
+      max-width:480px;
     }
-    .brief-header-label { font-size:10px; letter-spacing:0.18em; color:#999; text-transform:uppercase; }
-    .brief-header-id { font-size:10px; letter-spacing:0.12em; color:#999; }
-    .brief-name-row {
-      padding:28px 20px 24px;
-      border-bottom:1.5px solid #111;
-      position:relative;
+    .bio-text p { margin-bottom:1rem; }
+    .bio-text p:last-child { margin-bottom:0; }
+    .bio-contact {
+      font-family:'Space Mono', monospace;
+      font-size:11px;
+      letter-spacing:0.04em;
+      color:#111;
+      margin:20px 0 0;
     }
-    .brief-field-num { font-size:9px; letter-spacing:0.14em; color:#999; margin-bottom:6px; }
-    .brief-name { font-size:42px; font-weight:700; color:#111; letter-spacing:-0.03em; line-height:1; margin:0; }
-    @media (max-width:1100px) { .brief-name { font-size:34px; } }
-    .brief-role-stamp {
-      position:absolute; bottom:24px; right:20px;
-      font-size:9px; letter-spacing:0.2em; color:#999; text-transform:uppercase;
-      border:1px solid #999; padding:4px 8px;
-    }
-    .brief-grid { display:grid; grid-template-columns:1fr 1fr; }
-    @media (max-width:480px) {
-      .brief-grid { grid-template-columns:1fr; }
-      .brief-cell:nth-child(odd) { border-right:none !important; border-bottom:1px solid #ddd !important; }
-      .brief-cell:nth-last-child(-n+2) { border-bottom:1px solid #ddd !important; }
-      .brief-cell:last-child { border-bottom:none !important; }
-    }
-    .brief-cell { padding:16px 20px; border-bottom:1px solid #ddd; box-sizing:border-box; }
-    .brief-cell:nth-child(odd) { border-right:1.5px solid #111; }
-    .brief-cell:nth-last-child(-n+2) { border-bottom:none; }
-    .brief-cell-num { font-size:9px; letter-spacing:0.14em; color:#999; margin-bottom:4px; }
-    .brief-cell-label { font-size:9px; letter-spacing:0.18em; color:#999; text-transform:uppercase; margin-bottom:8px; }
-    .brief-cell-val { font-size:12px; font-weight:700; color:#111; text-decoration:none; display:block; word-break:break-all; }
-    a.brief-cell-val:hover { text-decoration:underline; }
-    .brief-footer {
-      border-top:1.5px solid #111; padding:10px 20px;
-      display:flex; align-items:center; justify-content:space-between;
-    }
-    .brief-footer-bar { display:flex; gap:4px; align-items:center; }
-    .brief-tick { width:18px; height:6px; background:#111; }
-    .brief-tick.muted { background:#ddd; }
-    .brief-footer-status { font-size:9px; letter-spacing:0.16em; color:#999; text-transform:uppercase; }
+    .bio-contact a { color:#111; text-decoration:none; }
+    .bio-contact a:hover { text-decoration:underline; }
+    .bio-contact .sep { color:#999; margin:0 10px; }
 
     /* ── LIGHTBOX ── */
     #lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.92); display:none; align-items:center; justify-content:center; z-index:100; cursor:zoom-out; }
@@ -208,7 +175,7 @@
   <!-- ── INTRO ── -->
   <section class="intro">
     <div class="intro-text">
-      <p class="intro-greeting">Hi! Paul here.</p>
+      <p class="intro-greeting">Hi!</p>
       <p>Usually holding a camera, or on the tennis court, always thinking about how things are built.<p/>
         <p>"When I let go of what I am, I become what I might be." - Lao Tzu</p>
     </div>
@@ -222,51 +189,18 @@
     <div class="gallery" id="gallery"></div>
   </section>
 
-  <!-- BIO + CONTACT (two-column) -->
+  <!-- BIO + CONTACT (inline, no card) -->
   <section id="sec-bio">
-    <div class="bio-col">
-      <span class="bio-label">Background</span>
+    <div class="bio-block">
+      <h2 class="bio-name">Paul C. Ruback</h2>
       <div class="bio-text">
-        <p>I believe technology is the connective tissue between individuals and themselves. Fascinated with: linguistics, scalable systems, and design that is fluid and relational.</p>
+        <p>I believe technology is the connective tissue between individuals and themselves. Fascinated with linguistics, scalable systems, and design that is fluid and relational.</p>
         <p>Competencies: Python, R, Financial Modeling, Database Architecture.</p>
         <p>Professional background: Structured finance, capital deployment in physical assets (water infrastructure), and quantitative analysis. The building process is where I thrive.</p>
       </div>
-    </div>
-
-    <div class="contact-col">
-      <div class="brief-wrap">
-        <div class="brief-header">
-          <span class="brief-header-label">Contact Brief</span>
-          <span class="brief-header-id">+</span>
-        </div>
-        <div class="brief-name-row">
-          <div class="brief-field-num">01 — SUBJECT</div>
-          <div class="brief-name">Paul C.<br>Ruback</div>
-          <div class="brief-role-stamp">Product Design</div>
-        </div>
-        <div class="brief-grid">
-          <div class="brief-cell">
-            <div class="brief-cell-num">02</div>
-            <div class="brief-cell-label">Email</div>
-            <a href="mailto:paulcruback@gmail.com" class="brief-cell-val">paulcruback@gmail.com</a>
-          </div>
-          <div class="brief-cell">
-            <div class="brief-cell-num">05</div>
-            <div class="brief-cell-label">LinkedIn</div>
-            <a href="https://linkedin.com/in/paulruback" target="_blank" rel="noopener" class="brief-cell-val">lnkd/paulruback.com</a>
-          </div>
-        </div>
-        <div class="brief-footer">
-          <div class="brief-footer-bar">
-            <div class="brief-tick"></div>
-            <div class="brief-tick"></div>
-            <div class="brief-tick"></div>
-            <div class="brief-tick muted"></div>
-            <div class="brief-tick muted"></div>
-          </div>
-          <span class="brief-footer-status">Status: building</span>
-        </div>
-      </div>
+      <p class="bio-contact">
+        <a href="mailto:paulcruback@gmail.com">paulcruback@gmail.com</a><span class="sep">·</span><a href="https://linkedin.com/in/paulruback" target="_blank" rel="noopener">lnkd/paulruback.com</a>
+      </p>
     </div>
   </section>
 
@@ -403,5 +337,4 @@
     });
   </script>
 </body>
-</html>
 </html>

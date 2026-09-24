@@ -616,11 +616,11 @@
 <div class="log-stage" id="log-stage">
   <div class="log-card">
     <div class="log-left">
-      <div class="log-eyebrow">hardware concept · v0.3</div>
+      <div class="log-eyebrow">hardware concept · v0.7</div>
       <div class="log-title">Log</div>
-      <p class="log-tagline">Broadcast your own station. Tune into someone else's. Write what airs.</p>
-      <p class="log-desc">Log puts a station in your pocket — broadcast locally, own the signal outright. Put your station out there for anyone close by or turn the dial to explore. Then tune out — write in plain text, saved locally.</p>
-      <p class="log-closing">For the kid who ran the school announcements.</p>
+      <p class="log-tagline">Write it down. Reach someone if you want to. Broadcast when you're ready.</p>
+      <p class="log-desc">Log is a small device with a keyboard and a screen. You write on it. What you write comes back to you later — a week later, a month later, or on a day you pick — in your own words, not generated ones. It doesn't connect to the internet or a cloud account; whatever you write stays on the device. It can also send text to another Log nearby, or broadcast over FM radio, if you want to do that. Neither is required. That's it.</p>
+      <p class="log-closing">For anyone who wants a few honest minutes back in their day.</p>
 
       <div class="log-spec">
         <div class="log-spec-group">
@@ -640,6 +640,7 @@
         <div class="log-spec-group">
           <div class="log-spec-label">Audio</div>
           <dl>
+            <dt>Mic</dt><dd>Built-in — broadcast transmission only, no dictation or voice commands</dd>
             <dt>Speaker</dt><dd>Built-in mono — tune in without headphones</dd>
             <dt>Jack</dt><dd>3.5mm headphone</dd>
           </dl>
@@ -649,6 +650,7 @@
           <dl>
             <dt>FM</dt><dd>88–108MHz, transmit + receive</dd>
             <dt>AM</dt><dd>535–1605kHz, transmit + receive</dd>
+            <dt>LoRa</dt><dd>Private layer — reaches other Log units only, not public</dd>
             <dt>Range</dt><dd>Transmit ~100–200ft (Part 15, unlicensed). Receive uncapped.</dd>
           </dl>
         </div>
@@ -656,6 +658,12 @@
           <div class="log-spec-label">Display</div>
           <dl>
             <dt>Interior</dt><dd>E-ink reader + memory LCD compose strip</dd>
+          </dl>
+        </div>
+        <div class="log-spec-group">
+          <div class="log-spec-label">Status</div>
+          <dl>
+            <dt>Indicator</dt><dd>One external LED — soft glow (waiting), amber pulse (queued), distinct pattern (urgent)</dd>
           </dl>
         </div>
         <div class="log-spec-group">
@@ -669,12 +677,12 @@
         <div class="log-spec-group">
           <div class="log-spec-label">Commercial</div>
           <dl>
-            <dt>Price</dt><dd>Under $100 retail</dd>
-            <dt>Availability</dt><dd>2027</dd>
+            <dt>Price</dt><dd>TBD — cost/BOM under review</dd>
+            <dt>Availability</dt><dd>TBD</dd>
           </dl>
         </div>
       </div>
-      <div class="log-version">log · v0.3</div>
+      <div class="log-version">log · v0.7</div>
     </div>
     <div class="log-right">
       <div class="log-figure">
@@ -926,6 +934,7 @@
     let levelElapsed=0,portalArrived=false;
     let depthRings=[];for(let i=0;i<DEPTH_RING_COUNT;i++)depthRings.push(200+i*DEPTH_RING_SPACE);
     let lastTs=0,lastFireTs=0,cursorAngle=Math.PI/2,cursorOnSvg=false;
+    let cachedCosA=Math.cos(shipAngle),cachedSinA=Math.sin(shipAngle);
     const keys={left:false,right:false};
     function clientToAngle(clientX,clientY){
       const rect=svg.getBoundingClientRect();
@@ -1011,8 +1020,8 @@
       }
     }
     function currentFwdSpeed(){const t=Math.min(1,levelElapsed/LEVEL_ACCEL_MS);return FWD_SPEED_START+(FWD_SPEED_END-FWD_SPEED_START)*t*t;}
-    function renderShip(){
-      const sx=CX+SHIP_RIM_R*Math.cos(shipAngle),sy=CY+SHIP_RIM_R*Math.sin(shipAngle);
+    function renderShip(cosA,sinA){
+      const sx=CX+SHIP_RIM_R*cosA,sy=CY+SHIP_RIM_R*sinA;
       const da=Math.atan2(CY-sy,CX-sx)*180/Math.PI+90;
       ship.setAttribute("transform",`translate(${sx} ${sy}) rotate(${da})`);
     }
@@ -1105,7 +1114,10 @@
         for(let i=0;i<depthRings.length;i++){depthRings[i]-=dz;if(depthRings[i]<0)depthRings[i]=Math.max(...depthRings)+DEPTH_RING_SPACE;}
         if(cursorOnSvg){shipAngle=cursorAngle;}
         else{let dAngle=0;if(keys.left)dAngle-=1;if(keys.right)dAngle+=1;shipAngle+=dAngle*KEY_STEER_SPEED*dt;}
-        warpTargetX=-Math.cos(shipAngle)*WARP_MAX_OFFSET;warpTargetY=-Math.sin(shipAngle)*WARP_MAX_OFFSET;
+        // shipAngle is finalized above for this frame — compute cos/sin once and reuse
+        // below instead of calling Math.cos/Math.sin repeatedly for the same angle.
+        cachedCosA=Math.cos(shipAngle);cachedSinA=Math.sin(shipAngle);
+        warpTargetX=-cachedCosA*WARP_MAX_OFFSET;warpTargetY=-cachedSinA*WARP_MAX_OFFSET;
         const ease=1-Math.exp(-WARP_EASE_RATE*dt);warpX+=(warpTargetX-warpX)*ease;warpY+=(warpTargetY-warpY)*ease;
         shots=shots.filter(s=>{
           s.z+=s.vz*dt;if(s.z>FAR_Z+100)return false;
@@ -1116,15 +1128,17 @@
           }
           return true;
         });
-        const sX=CX+SHIP_RIM_R*Math.cos(shipAngle),sY=CY+SHIP_RIM_R*Math.sin(shipAngle);
+        const sX=CX+SHIP_RIM_R*cachedCosA,sY=CY+SHIP_RIM_R*cachedSinA;
         for(const a of asteroids){
           if(!a.alive)continue;if(a.z>40)continue;if(a.z<-60){a.alive=false;continue;}
           const pa=project(a.x,a.y,Math.max(a.z,0));
           if(Math.hypot(pa.sx-sX,pa.sy-sY)<a.r*pa.scale+SHIP_HIT_R)return beginCrash(shipAngle,asteroids.filter(x=>x.alive).length);
         }
         if(asteroids.filter(a=>a.alive).length===0&&!portalArrived){portalArrived=true;setTimeout(()=>{if(gameState==="playing")advanceLevel();},700);}
+      }else{
+        cachedCosA=Math.cos(shipAngle);cachedSinA=Math.sin(shipAngle);
       }
-      renderShip();renderDepthRings();renderAsteroids();renderShots();renderPortal();updateHUD();
+      renderShip(cachedCosA,cachedSinA);renderDepthRings();renderAsteroids();renderShots();renderPortal();updateHUD();
       requestAnimationFrame(tick);
     }
     function startGame(){hideBanner();gameState="playing";levelIdx=0;shipAngle=Math.PI/2;deepestZReached=0;ripples=[];warpX=warpY=warpTargetX=warpTargetY=0;lastTs=0;spawnLevel(LEVELS[levelIdx]);}
@@ -1263,7 +1277,12 @@
   function rY(p,a){return[p[0]*Math.cos(a)+p[2]*Math.sin(a),p[1],-p[0]*Math.sin(a)+p[2]*Math.cos(a)];}
   function prj(x,y,z,cx,cy,sc){const fov=540,zO=440,s=fov/(fov+z+zO);return[cx+x*s*sc,cy+y*s*sc];}
   function normVerts(s){const m=Math.max(...s.verts.map(v=>lenV(v)));return s.verts.map(v=>scl(v,1/m));}
-  function getTriFaces(s){const vs=normVerts(s);return s.tris.map(f=>[vs[f[0]],vs[f[1]],vs[f[2]]]);}
+  // Per-solid normalized vertices are static geometry (SOLIDS never mutates) — computed once
+  // instead of every frame. getNormVerts() falls back to a live computation for any solid
+  // not found in the cache, so behavior is unchanged for any caller.
+  const NORM_VERTS=SOLIDS.map(normVerts);
+  function getNormVerts(s){const idx=SOLIDS.indexOf(s);return idx>=0?NORM_VERTS[idx]:normVerts(s);}
+  function getTriFaces(s){const vs=getNormVerts(s);return s.tris.map(f=>[vs[f[0]],vs[f[1]],vs[f[2]]]);}
 
   function make60(){
     const iv=[[-1,φ,0],[1,φ,0],[-1,-φ,0],[1,-φ,0],[0,-1,φ],[0,1,φ],[0,-1,-φ],[0,1,-φ],[φ,0,-1],[φ,0,1],[-φ,0,-1],[-φ,0,1]];
@@ -1359,7 +1378,7 @@
   function getCol(pi){const dk=isDark();const cs=dk?SOLIDS[solidIdx].hueDark:SOLIDS[solidIdx].hue;const ct=dk?SOLIDS[nextIdx].hueDark:SOLIDS[nextIdx].hue;return cs.map((c,i)=>lerp(c,ct[i],parts[pi].cT)|0);}
   function drawWire(ctx,s,cx,cy,sc,alpha,angle){
     if(alpha<0.005)return;
-    const vs=normVerts(s),rot=vs.map(v=>{let q=rY(v,angle*0.72);q=rX(q,angle*0.44);return q;});
+    const vs=getNormVerts(s),rot=vs.map(v=>{let q=rY(v,angle*0.72);q=rX(q,angle*0.44);return q;});
     const dk=isDark(),c=dk?s.hueDark:s.hue;
     ctx.save();ctx.strokeStyle=`rgb(${c[0]},${c[1]},${c[2]})`;ctx.globalAlpha=alpha*0.22;ctx.lineWidth=0.7;
     s.edges.forEach(e=>{const a=rot[e[0]],b=rot[e[1]];const pa=prj(a[0],a[1],a[2],cx,cy,sc),pb=prj(b[0],b[1],b[2],cx,cy,sc);ctx.beginPath();ctx.moveTo(pa[0],pa[1]);ctx.lineTo(pb[0],pb[1]);ctx.stroke();});
@@ -1411,8 +1430,13 @@
     const dim=Math.min(wrap.offsetWidth,wrap.offsetHeight,560);
     stageC.width=dim;stageC.height=dim;stageC.style.width=dim+"px";stageC.style.height=dim+"px";
   }
+  let tileResizeCheckCounter=0;
   function drawTile(){
-    if(tileC&&tileC.offsetWidth>0&&tileC.width!==tileC.offsetWidth*(window.devicePixelRatio||1))resizeTile();
+    // Checked every ~30 frames instead of every frame — resizeTile() is already called
+    // directly on window "resize" and on init, so this is just a periodic safety net
+    // and doesn't need to force a layout read on every single animation frame.
+    tileResizeCheckCounter++;
+    if(tileResizeCheckCounter%30===0&&tileC&&tileC.offsetWidth>0&&tileC.width!==tileC.offsetWidth*(window.devicePixelRatio||1))resizeTile();
     if(!tileC||!tileC.width){requestAnimationFrame(drawTile);return;}
     const w=tileC.offsetWidth||tileC.width,h=tileC.offsetHeight||tileC.height;
     tileX.clearRect(0,0,w,h);
@@ -1422,10 +1446,10 @@
     const t=eio(tileMorphT);
     const cA=dk?SOLIDS[tileIdx].hueDark:SOLIDS[tileIdx].hue;
     const cB=dk?SOLIDS[tileNextIdx].hueDark:SOLIDS[tileNextIdx].hue;
-    const vs=normVerts(SOLIDS[tileIdx]);const rot=vs.map(v=>{let q=rY(v,tileAngle*0.72);q=rX(q,tileAngle*0.44);return q;});
+    const vs=NORM_VERTS[tileIdx];const rot=vs.map(v=>{let q=rY(v,tileAngle*0.72);q=rX(q,tileAngle*0.44);return q;});
     tileX.save();tileX.strokeStyle=`rgb(${cA[0]},${cA[1]},${cA[2]})`;tileX.globalAlpha=(1-t)*0.55;tileX.lineWidth=1.0;
     SOLIDS[tileIdx].edges.forEach(e=>{const a=rot[e[0]],b=rot[e[1]];const pa=prj(a[0],a[1],a[2],cx,cy,sc),pb=prj(b[0],b[1],b[2],cx,cy,sc);tileX.beginPath();tileX.moveTo(pa[0],pa[1]);tileX.lineTo(pb[0],pb[1]);tileX.stroke();});
-    if(tileMorphing){const vs2=normVerts(SOLIDS[tileNextIdx]);const rot2=vs2.map(v=>{let q=rY(v,tileAngle*0.72);q=rX(q,tileAngle*0.44);return q;});tileX.globalAlpha=t*0.55;tileX.strokeStyle=`rgb(${cB[0]},${cB[1]},${cB[2]})`;SOLIDS[tileNextIdx].edges.forEach(e=>{const a=rot2[e[0]],b=rot2[e[1]];const pa=prj(a[0],a[1],a[2],cx,cy,sc),pb=prj(b[0],b[1],b[2],cx,cy,sc);tileX.beginPath();tileX.moveTo(pa[0],pa[1]);tileX.lineTo(pb[0],pb[1]);tileX.stroke();});}
+    if(tileMorphing){const vs2=NORM_VERTS[tileNextIdx];const rot2=vs2.map(v=>{let q=rY(v,tileAngle*0.72);q=rX(q,tileAngle*0.44);return q;});tileX.globalAlpha=t*0.55;tileX.strokeStyle=`rgb(${cB[0]},${cB[1]},${cB[2]})`;SOLIDS[tileNextIdx].edges.forEach(e=>{const a=rot2[e[0]],b=rot2[e[1]];const pa=prj(a[0],a[1],a[2],cx,cy,sc),pb=prj(b[0],b[1],b[2],cx,cy,sc);tileX.beginPath();tileX.moveTo(pa[0],pa[1]);tileX.lineTo(pb[0],pb[1]);tileX.stroke();});}
     tileX.restore();
     if(!tileParts)tileParts=REST[tileIdx].map(r=>r.map(v=>[...v]));
     if(tileMorphing){tileParts=REST[tileIdx].map((r,i)=>r.map((v,j)=>lerpV(v,REST[tileNextIdx][i][j],t)));}

@@ -273,6 +273,127 @@
   body.nf-inverted .ow-pip { background: rgba(230,229,224,0.75); }
 </style>
 
+<style>
+  /* ── Resonance ── */
+  #rs-root {
+    --rs-ink: #1a1a1a; --rs-ink-2: #5a5a5a; --rs-ink-3: #9a9a9a;
+    --rs-mono: 'Space Mono', ui-monospace, monospace;
+    --rs-serif: 'Spectral', Georgia, serif;
+    width: clamp(160px,42vw,220px);
+  }
+
+  /* tile — same size and structure as the other tiles */
+  .rs-tile {
+    width: clamp(160px,42vw,220px); height: clamp(160px,42vw,220px);
+    border: 1px solid var(--rs-ink-3); background: rgba(245,243,238,0.7);
+    cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    transition: transform 0.25s ease, border-color 0.25s ease;
+    touch-action: manipulation;
+  }
+  .rs-tile:hover { border-color: var(--rs-ink); transform: scale(1.02); }
+  #rs-tile-canvas { width: 110px; height: 110px; display: block; pointer-events: none; }
+  .rs-tile-label {
+    font-family: var(--rs-mono); font-size: 10px;
+    letter-spacing: 0.24em; text-transform: uppercase; color: var(--rs-ink-2);
+  }
+  body.nf-inverted .rs-tile { background: rgba(22,22,21,0.7); border-color: rgba(245,243,238,0.45); }
+  body.nf-inverted .rs-tile-label { color: rgba(245,243,238,0.85); }
+
+  /* stage */
+  .rs-stage {
+    position: fixed; inset: 0; z-index: 9000;
+    background: rgba(245,243,238,0.97);
+    display: none; align-items: center; justify-content: center;
+    user-select: none; -webkit-user-select: none;
+  }
+  .rs-stage.open { display: flex; animation: rs-fadein 0.28s ease forwards; }
+  @keyframes rs-fadein { from { opacity: 0; } to { opacity: 1; } }
+  body.nf-inverted .rs-stage { background: rgba(22,22,21,0.97); }
+
+  .rs-playfield {
+    position: relative;
+    width: min(560px,82vw); height: min(560px,82vw);
+    max-width: 560px; max-height: 560px;
+  }
+  #rs-stage-canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    display: block; cursor: crosshair; touch-action: manipulation;
+  }
+  .rs-title, .rs-state, .rs-hint {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    font-family: var(--rs-mono); text-transform: uppercase; white-space: nowrap;
+    pointer-events: none; color: var(--rs-ink-3);
+  }
+  .rs-title { top: 0; font-size: clamp(8px,1.8vw,10px); letter-spacing: 0.22em; }
+  .rs-state {
+    bottom: clamp(22px,5%,28px);
+    font-size: clamp(7px,1.7vw,9px); letter-spacing: 0.26em;
+    transition: color 0.8s ease;
+  }
+  .rs-state.coupling  { color: var(--rs-ink-2); }
+  .rs-state.resonance, .rs-state.flow { color: var(--rs-ink); }
+  .rs-hint {
+    bottom: clamp(6px,1.5%,10px);
+    font-size: clamp(7px,1.6vw,9px); letter-spacing: 0.18em;
+    transition: opacity 0.5s ease;
+  }
+  body.nf-inverted .rs-title, body.nf-inverted .rs-hint { color: rgba(230,229,224,0.30); }
+  body.nf-inverted .rs-state { color: rgba(230,229,224,0.30); }
+  body.nf-inverted .rs-state.coupling { color: rgba(230,229,224,0.55); }
+  body.nf-inverted .rs-state.resonance, body.nf-inverted .rs-state.flow { color: rgba(230,229,224,0.88); }
+
+  /* description — fades in at Sustained Flow and stays */
+  .rs-desc {
+    position: absolute; inset: 0; overflow: hidden;
+    padding: clamp(18px,5vmin,40px);
+    display: flex; flex-direction: column; justify-content: center;
+    gap: clamp(6px,1.6vmin,14px);
+    background: rgba(245,243,238,0.96);
+    opacity: 0; pointer-events: none; transition: opacity 1.2s ease;
+  }
+  .rs-desc.revealed { opacity: 1; pointer-events: auto; }
+  body.nf-inverted .rs-desc { background: rgba(22,22,21,0.96); }
+  .rs-desc-eyebrow {
+    font-family: var(--rs-mono); font-size: clamp(7px,1.5vmin,9px);
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--rs-ink-3);
+  }
+  .rs-desc-title {
+    font-family: var(--rs-serif); font-weight: 400; margin: 0;
+    font-size: clamp(20px,5.5vmin,30px); line-height: 1.15; color: var(--rs-ink);
+  }
+  .rs-desc-sub {
+    font-family: var(--rs-mono); font-size: clamp(7px,1.5vmin,9px);
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--rs-ink-2);
+  }
+  .rs-desc p {
+    font-family: var(--rs-serif); margin: 0; color: var(--rs-ink);
+    font-size: clamp(9.5px,2.55vmin,14px); line-height: 1.55;
+  }
+  body.nf-inverted .rs-desc-eyebrow { color: rgba(230,229,224,0.35); }
+  body.nf-inverted .rs-desc-title { color: rgba(230,229,224,0.9); }
+  body.nf-inverted .rs-desc-sub { color: rgba(230,229,224,0.45); }
+  body.nf-inverted .rs-desc p { color: rgba(230,229,224,0.78); }
+
+  .rs-exit {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    font-family: var(--rs-mono); font-size: 9px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: rgba(26,26,26,0.28);
+    pointer-events: none; white-space: nowrap; z-index: 9001;
+  }
+  body.nf-inverted .rs-exit { color: rgba(230,229,224,0.22); }
+
+  /* very small phones */
+  @media (max-width: 420px) {
+    .rs-playfield { width: 92vw; height: 92vw; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rs-stage.open { animation: none; }
+    .rs-desc { transition: none; }
+  }
+</style>
+
+
 </head>
 <body>
 
@@ -366,6 +487,30 @@
   </div>
 </div>
 
+<!-- ── Resonance ── -->
+<div id="rs-root">
+  <div class="rs-tile" id="rs-tile" role="button" tabindex="0" aria-label="Open Resonance">
+    <canvas id="rs-tile-canvas"></canvas>
+    <div class="rs-tile-label">resonance</div>
+  </div>
+  <div class="rs-stage" id="rs-stage">
+    <div class="rs-playfield" id="rs-playfield">
+      <div class="rs-title">resonance</div>
+      <canvas id="rs-stage-canvas"></canvas>
+      <div class="rs-state" id="rs-state">Fragmented</div>
+      <div class="rs-hint" id="rs-hint">tap to synchronise</div>
+      <div class="rs-desc" id="rs-desc">
+        <div class="rs-desc-eyebrow">ongoing</div>
+        <h2 class="rs-desc-title">Resonance</h2>
+        <div class="rs-desc-sub">design · quiet interface</div>
+        <p>Resonance brings your Apple Watch health metrics to your Lock Screen as a responsive, living visual. By mapping your movement and heart-rate variability, it creates a fluid animation that reflects your current state.</p>
+        <p>Tap the interface to initiate a brief grounding exercise, where subtle haptics guide you to sync your breathing with the visual pulse. It transforms data into a tool for composure, right where you see it first.</p>
+      </div>
+    </div>
+    <div class="rs-exit">click outside · esc</div>
+  </div>
+</div>
+
 
 <!-- ── Log ── -->
 <div id="log-root">
@@ -449,8 +594,8 @@
         <div class="log-spec-group">
           <div class="log-spec-label">Commercial</div>
           <dl>
-            <dt>Price</dt><dd>TBD — cost/BOM under review</dd>
-            <dt>Availability</dt><dd>TBD</dd>
+            <dt>Price</dt><dd>Sub $100 retail</dd>
+            <dt>Availability</dt><dd>Rollout Q2 2027</dd>
           </dl>
         </div>
       </div>
@@ -555,7 +700,7 @@
       invertBtn.addEventListener("pointerdown",(e)=>e.stopPropagation());
       invertBtn.addEventListener("pointerup",(e)=>e.stopPropagation());
     }
-    const EXCL="#nf-invert,#nf-home,.ow-tile,#ps-tile,.ow-stage,#ps-stage,.page-header";
+    const EXCL="#nf-invert,#nf-home,.ow-tile,#ps-tile,.rs-tile,.ow-stage,#ps-stage,.rs-stage,.page-header";
     document.addEventListener("pointermove",(e)=>{
       if(e.target.closest&&e.target.closest(EXCL))return;
       const now=performance.now();
@@ -591,7 +736,7 @@
       if(source.active){applyKick(source.x,source.y);source.active=false;}
     });
     document.addEventListener("stageopen",()=>{source.active=false;source.pressed=false;});
-    function anyStageOpen(){return!!document.querySelector(".ow-stage.open,#ps-stage.open,.log-stage.open");}
+    function anyStageOpen(){return!!document.querySelector(".ow-stage.open,#ps-stage.open,.rs-stage.open,.log-stage.open");}
     let lastTs=0;
     function frame(ts){
       if(!ready){requestAnimationFrame(frame);return;}
@@ -1254,7 +1399,334 @@
 })();
 </script>
 
+<!-- ── Resonance ── -->
+<script>
+(function () {
+  /* ── Haptics ───────────────────────────────────────────────────────
+     navigator.vibrate works on Android Chrome/Firefox. iOS Safari does not
+     support it, so the animation stays fully functional without it.
+     Skipped when the user prefers reduced motion. */
+  const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function buzz(pattern) {
+    if (reduceMotion || !navigator.vibrate) return;
+    try { navigator.vibrate(pattern); } catch (_) {}
+  }
 
+  /* ── Constants ─────────────────────────────────────────────────── */
+  const BREATH_PERIOD  = 10.0;   // seconds — 5–6 breaths/min
+  const HEART_BASE     = 1.05;   // Hz — shared heartbeat
+  const HEART_SPREAD   = 0.18;   // ± individual variation at c=0
+  const N_NODES        = 8;
+  const ORBIT_SPEED    = 0.28;   // rad/s
+  const CLICK_INCREMENT = 0.28;  // ~4 taps to Sustained Flow
+  const DECAY_RATE      = 0.08;  // per second when idle
+  const FLASH_THRESHOLDS = [0.25, 0.50, 0.75, 1.0];
+  const STATES = [
+    { min: 0.00, label: 'Fragmented',     cls: ''          },
+    { min: 0.25, label: 'Coupling',       cls: 'coupling'  },
+    { min: 0.55, label: 'Resonance',      cls: 'resonance' },
+    { min: 0.85, label: 'Sustained Flow', cls: 'flow'      },
+  ];
+  const getState = (c) => STATES.reduce((s, st) => (c >= st.min ? st : s), STATES[0]);
+
+  /* ── State ─────────────────────────────────────────────────────── */
+  let coherence = 0, flashAmt = 0, lastFlashIdx = -1, lockWave = 0;
+  let stageOpen = false, descRevealed = false, lastStateCls = '';
+  const nodeOwnHz = Array.from({ length: N_NODES }, (_, i) =>
+    HEART_BASE + (i / (N_NODES - 1) - 0.5) * 2 * HEART_SPREAD);
+  const nodePhaseCorrection = new Array(N_NODES).fill(0);
+
+  // A tap nudges every node's phase toward the shared beat
+  function tapCorrect() {
+    for (let i = 0; i < N_NODES; i++)
+      nodePhaseCorrection[i] = Math.min(1, nodePhaseCorrection[i] + 0.22);
+  }
+
+  /* ── Geometry for one node (shared by the main and mirrored layers) ── */
+  function nodePos(i, c, t, R, cx, cy) {
+    const shell   = i < N_NODES / 2 ? 0 : 1;               // 0 inner · 1 outer
+    const baseR   = shell === 0
+      ? R * (0.42 + Math.sin(t * 0.12 + i) * 0.04 * (1 - c))
+      : R * (0.62 + Math.sin(t * 0.09 + i) * 0.04 * (1 - c));
+    const rotDir  = shell === 0 ? 1 : -1;                   // shells counter-rotate
+    const rotRate = shell === 0 ? ORBIT_SPEED : ORBIT_SPEED * 0.7;
+    const a       = i * Math.PI * 2 / (N_NODES / 2);
+    const ownRate = rotRate * (0.85 + (i % 4) * 0.08);
+    const ang     = a + rotDir * t * (ownRate * (1 - c) + rotRate * c);
+    const hz      = nodeOwnHz[i] * (1 - c) + HEART_BASE * c;
+    const rawPhase = t * hz * Math.PI * 2;
+    const orbitR  = baseR + Math.sin(rawPhase * 0.5 + i) * R * 0.06 * (1 - c);
+    return { shell, ang, orbitR, rawPhase,
+             x: cx + Math.cos(ang) * orbitR, y: cy + Math.sin(ang) * orbitR };
+  }
+
+  /* ── The animation ─────────────────────────────────────────────── */
+  function drawResonance(ctx, cx, cy, R, c, t, flash) {
+    ctx.clearRect(0, 0, cx * 2, cy * 2);
+
+    const breathCycle = Math.PI * 2 / BREATH_PERIOD;
+    const breathVal   = Math.sin(t * breathCycle) * 0.5 + 0.5;
+    const ink = document.body.classList.contains('nf-inverted') ? '230,229,224' : '26,26,26';
+    const K = (a) => `rgba(${ink},${a.toFixed(3)})`;
+
+    // Ambient field
+    const bg = ctx.createRadialGradient(cx, cy, 2, cx, cy, R);
+    bg.addColorStop(0, K(0.05 + c * 0.10 + breathVal * c * 0.04));
+    bg.addColorStop(1, K(0));
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, cx * 2, cy * 2);
+
+    // Nested rings — inner heaviest, outer a faint trace; wobble settles with coherence
+    [[0.28, 1.0], [0.46, 0.65], [0.65, 0.40], [0.85, 0.20]].forEach(([frac, wt], ri) => {
+      const wobble = Math.sin(t * (0.7 - c * 0.3) + ri * 1.6) * 3.5 * (1 - c);
+      const sync   = Math.sin(t * breathCycle + ri * 0.3) * R * 0.016 * c;
+      ctx.beginPath();
+      ctx.strokeStyle = K((0.13 + c * 0.16 + breathVal * c * 0.06) * wt);
+      ctx.lineWidth = (0.7 + c * 0.5) * wt;
+      ctx.arc(cx, cy, R * frac + wobble + sync, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
+    // Threshold flash ring
+    if (flash > 0) {
+      ctx.beginPath();
+      ctx.strokeStyle = K(flash * 0.32);
+      ctx.lineWidth = 0.8 + flash * 2;
+      ctx.arc(cx, cy, R * 0.50 + flash * R * 0.12, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Lock-in wave — sweeps outward at Sustained Flow, flashing each node as it passes
+    const lockNodeFlash = new Array(N_NODES).fill(0);
+    if (lockWave > 0) {
+      ctx.beginPath();
+      ctx.strokeStyle = K(Math.max(0, (1 - lockWave) * 0.30));
+      ctx.lineWidth = 0.8 + (1 - lockWave) * 1.5;
+      ctx.arc(cx, cy, R * 0.15 + lockWave * R * 0.85, 0, Math.PI * 2);
+      ctx.stroke();
+      for (let i = 0; i < N_NODES; i++)
+        lockNodeFlash[i] = Math.max(0, 1 - Math.abs(lockWave - i / N_NODES) * N_NODES * 1.2);
+    }
+
+    // Nodes: curved spokes (alternating bow), shell links, halo + dot
+    for (let i = 0; i < N_NODES; i++) {
+      const p = nodePos(i, c, t, R, cx, cy);
+      const phaseDiff = t * HEART_BASE * Math.PI * 2 - p.rawPhase;
+      const heartbeat = Math.sin(p.rawPhase + phaseDiff * nodePhaseCorrection[i]) * 0.5 + 0.5;
+      nodePhaseCorrection[i] = Math.max(0, nodePhaseCorrection[i] - 0.0004);
+
+      const spokeAng = Math.atan2(p.y - cy, p.x - cx);
+      const bow = R * 0.12 * (1 - c * 0.7) * (i % 2 === 0 ? 1 : -1);
+      ctx.beginPath();
+      ctx.strokeStyle = K(0.16 + c * 0.26 + heartbeat * c * 0.10);
+      ctx.lineWidth = 0.5 + c * 0.5;
+      ctx.moveTo(cx, cy);
+      ctx.quadraticCurveTo(
+        cx + Math.cos(p.ang) * p.orbitR * 0.5 + Math.cos(spokeAng + Math.PI / 2) * bow,
+        cy + Math.sin(p.ang) * p.orbitR * 0.5 + Math.sin(spokeAng + Math.PI / 2) * bow,
+        p.x, p.y);
+      ctx.stroke();
+
+      if (c > 0.55) {                                   // neighbours link up within a shell
+        const nextI = p.shell === 0 ? (i + 1) % 4 : 4 + ((i - 4 + 1) % 4);
+        const q = nodePos(nextI, c, t, R, cx, cy);
+        ctx.beginPath();
+        ctx.strokeStyle = K((c - 0.55) * 0.30);
+        ctx.lineWidth = 0.5;
+        ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+      }
+
+      const dotBase  = R * (p.shell === 0 ? 0.026 : 0.020);
+      const dotR     = dotBase * (1 + heartbeat * (0.35 + c * 0.35)) + lockNodeFlash[i] * dotBase;
+      const dotAlpha = 0.42 + c * 0.50 + heartbeat * c * 0.12 + lockNodeFlash[i] * 0.22;
+      const haloR    = dotR * 4.5;
+      const halo     = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, haloR);
+      halo.addColorStop(0, K(dotAlpha * 0.22)); halo.addColorStop(1, K(0));
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.arc(p.x, p.y, haloR, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.fillStyle = K(Math.min(0.92, dotAlpha));
+      ctx.arc(p.x, p.y, Math.max(0.8, dotR), 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Symmetry layer — a mirror image that materialises as the system synchronises
+    if (c > 0.05) {
+      const symAlpha = c * c;
+      for (let i = 0; i < N_NODES; i++) {
+        const p  = nodePos(i, c, t, R, cx, cy);
+        const mx = cx - (p.x - cx), my = p.y;
+        const mAng = Math.atan2(my - cy, mx - cx);
+        const bow = R * 0.12 * (1 - c * 0.7) * (i % 2 === 0 ? -1 : 1);
+        ctx.beginPath();
+        ctx.strokeStyle = K((0.16 + c * 0.26) * symAlpha);
+        ctx.lineWidth = 0.5 + c * 0.5;
+        ctx.moveTo(cx, cy);
+        ctx.quadraticCurveTo(
+          cx + Math.cos(mAng) * p.orbitR * 0.5 + Math.cos(mAng + Math.PI / 2) * bow,
+          cy + Math.sin(mAng) * p.orbitR * 0.5 + Math.sin(mAng + Math.PI / 2) * bow,
+          mx, my);
+        ctx.stroke();
+
+        const dotBase  = R * (p.shell === 0 ? 0.026 : 0.020);
+        const dotR     = dotBase * (1 + 0.35 * c);
+        const dotAlpha = (0.42 + c * 0.50) * symAlpha;
+        const haloR    = dotR * 4.5;
+        const halo     = ctx.createRadialGradient(mx, my, 0, mx, my, haloR);
+        halo.addColorStop(0, K(dotAlpha * 0.22)); halo.addColorStop(1, K(0));
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(mx, my, haloR, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath();
+        ctx.fillStyle = K(Math.min(0.92, dotAlpha));
+        ctx.arc(mx, my, Math.max(0.8, dotR), 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // Core — breathes, grows and stabilises with coherence
+    const coreR = R * 0.040 + R * (0.012 + c * 0.030) * breathVal + R * 0.075 * c;
+    const glowR = coreR * (3.5 + c * 1.5);
+    const glow  = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+    glow.addColorStop(0, K(0.12 + c * 0.18 + breathVal * c * 0.06));
+    glow.addColorStop(1, K(0));
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(cx, cy, glowR, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.fillStyle = K(Math.min(0.72, 0.38 + c * 0.28 + breathVal * 0.07));
+    ctx.arc(cx, cy, coreR, 0, Math.PI * 2); ctx.fill();
+  }
+
+  /* ── Canvas setup (DPR-aware so lines stay sharp) ─────────────────── */
+  function setupCanvas(canvas, logical) {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = logical * dpr; canvas.height = logical * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return ctx;
+  }
+
+  /* ── Tile preview ─────────────────────────────────────────────────── */
+  const tile       = document.getElementById('rs-tile');
+  const tileCanvas = document.getElementById('rs-tile-canvas');
+  const tileCtx    = setupCanvas(tileCanvas, 110);
+  let tileT = 0, tileLast = 0, tileRaf = null, tileVisible = true;
+
+  function tileFrame(ts) {
+    tileRaf = null;
+    if (!tileVisible) return;
+    const dt = tileLast ? Math.min(50, ts - tileLast) / 1000 : 0.016;
+    tileLast = ts; tileT += dt;
+    if (!stageOpen) coherence = Math.max(0, coherence - DECAY_RATE * dt * 0.1);
+    drawResonance(tileCtx, 55, 55, 48, Math.max(coherence, 0.15), tileT, 0);
+    tileRaf = requestAnimationFrame(tileFrame);
+  }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver((en) => {
+      tileVisible = en[0].isIntersecting;
+      if (tileVisible && !tileRaf) tileRaf = requestAnimationFrame(tileFrame);
+    }, { threshold: 0.1 }).observe(tileCanvas);
+  }
+  tileRaf = requestAnimationFrame(tileFrame);
+
+  /* ── Stage ────────────────────────────────────────────────────────── */
+  const stage       = document.getElementById('rs-stage');
+  const stageCanvas = document.getElementById('rs-stage-canvas');
+  const stageCtx    = setupCanvas(stageCanvas, 560);
+  const stateEl     = document.getElementById('rs-state');
+  const hintEl      = document.getElementById('rs-hint');
+  const descEl      = document.getElementById('rs-desc');
+  const SC = 280, SR = 238;                       // logical centre + radius of the 560 canvas
+  let stageT = 0, stageLast = 0, stageRaf = null;
+
+  function updateStateLabel(force) {
+    const s = getState(coherence);
+    if (force || s.cls !== lastStateCls) {
+      stateEl.textContent = s.label;
+      stateEl.className = 'rs-state' + (s.cls ? ' ' + s.cls : '');
+      lastStateCls = s.cls;
+    }
+    const fi = FLASH_THRESHOLDS.findIndex((th) => coherence >= th);
+    if (fi > lastFlashIdx) { lastFlashIdx = fi; flashAmt = 1; }
+    if (coherence < 0.18) lastFlashIdx = -1;
+  }
+
+  function stageFrame(ts) {
+    stageRaf = null;
+    if (!stageOpen) return;
+    const dt = stageLast ? Math.min(50, ts - stageLast) / 1000 : 0.016;
+    stageLast = ts; stageT += dt;
+
+    coherence = Math.max(0, coherence - DECAY_RATE * dt);
+    flashAmt  = Math.max(0, flashAmt - dt * 2);
+
+    if (coherence >= 0.85) {                       // lock-in wave repeats while flow holds
+      if (lockWave === 0) lockWave = 0.001;
+      lockWave = Math.min(1, lockWave + dt * 0.55);
+      if (lockWave >= 1) lockWave = 0;
+    } else lockWave = 0;
+
+    updateStateLabel(false);
+
+    if (coherence >= 0.85 && !descRevealed) {       // reveal once; it stays
+      descRevealed = true;
+      descEl.classList.add('revealed');
+      hintEl.style.opacity = '0';
+      buzz([30, 70, 30, 70, 60]);                   // settling "heartbeat" at lock-in
+    }
+
+    drawResonance(stageCtx, SC, SC, SR, coherence, stageT, flashAmt);
+    stageRaf = requestAnimationFrame(stageFrame);
+  }
+
+  function openStage() {
+    if (stageOpen) return;
+    stageOpen = true; descRevealed = false; coherence = 0; lockWave = 0;
+    lastFlashIdx = -1; stageLast = 0;
+    nodePhaseCorrection.fill(0);
+    descEl.classList.remove('revealed'); hintEl.style.opacity = '';
+    updateStateLabel(true);
+    stage.classList.add('open');
+    document.dispatchEvent(new Event('stageopen'));   // lets the field pause itself
+    stageRaf = requestAnimationFrame(stageFrame);
+  }
+  function closeStage() {
+    if (!stageOpen) return;
+    stageOpen = false;
+    stage.classList.remove('open');
+    cancelAnimationFrame(stageRaf); stageRaf = null;
+    if (!tileRaf && tileVisible) tileRaf = requestAnimationFrame(tileFrame);
+  }
+
+  // Tap to synchronise (+ haptics: light tick per tap, double pulse when the state steps up)
+  stageCanvas.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    const before = getState(coherence).label;
+    coherence = Math.min(1, coherence + CLICK_INCREMENT);
+    tapCorrect();
+    updateStateLabel(false);
+    buzz(getState(coherence).label !== before ? [16, 50, 16] : 10);
+  });
+
+  tile.addEventListener('click', openStage);
+  tile.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStage(); }
+  });
+  // Click-out: anywhere outside the playfield closes
+  stage.addEventListener('click', (e) => {
+    if (!e.target.closest('.rs-playfield')) closeStage();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && stageOpen) closeStage();
+  });
+  // Same as Outward / Plato: close if the page scrolls the tile out of view
+  let rsScrollTimer = null;
+  window.addEventListener('scroll', () => {
+    if (!stageOpen) return;
+    if (rsScrollTimer) clearTimeout(rsScrollTimer);
+    rsScrollTimer = setTimeout(() => {
+      const rect = tile.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) closeStage();
+    }, 80);
+  }, { passive: true });
+})();
+</script>
 
 
 <!-- ── Log ── -->
